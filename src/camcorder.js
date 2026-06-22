@@ -1,15 +1,17 @@
 // =============================================================================
-//  CAMÉSCOPE — overlay found-footage (REC + timecode + horloge qui défilent).
-//  Le clignotement REC, les scanlines, le cadrage et le jitter sont en CSS pur.
-//  Ici on ne gère que le compteur de temps. Affiché/caché par main.js
-//  (showCamcorder au pointer-lock, hideCamcorder à la pause).
+//  CAMÉSCOPE — overlay found-footage (REC + timecode + batterie).
+//  Désormais un OUTIL de gameplay : visible uniquement caméra levée (touche C).
+//  La visibilité + la batterie sont pilotées par main.js (setCamcorderVisible /
+//  setCamBattery). Le clignotement REC + scanlines + jitter restent en CSS pur.
 // =============================================================================
 const root   = document.getElementById('camcorder');
-const tcEl    = document.getElementById('cam-tc');
-const timeEl  = document.getElementById('cam-time');
+const tcEl   = document.getElementById('cam-tc');
+const timeEl = document.getElementById('cam-time');
+const battEl = document.querySelector('.cam-batt');
 
-let rec = 0;          // secondes d'enregistrement écoulées
+let rec = 0;            // secondes d'enregistrement écoulées
 let timer = null;
+let visible = false;
 const pad = (n) => String(n).padStart(2, '0');
 
 function tick() {
@@ -26,14 +28,27 @@ function tick() {
   }
 }
 
-export function showCamcorder() {
-  if (!root) return;
-  root.classList.remove('hidden');
-  if (!timer) { tick(); timer = setInterval(tick, 1000); }
+// Affiche/masque l'overlay (idempotent). Le timecode ne tourne que caméra levée.
+export function setCamcorderVisible(v) {
+  if (v === visible || !root) return;
+  visible = v;
+  if (v) {
+    root.classList.remove('hidden');
+    tick();
+    if (!timer) timer = setInterval(tick, 1000);
+  } else {
+    root.classList.add('hidden');
+    if (timer) { clearInterval(timer); timer = null; }
+  }
 }
 
-export function hideCamcorder() {
-  if (!root) return;
-  root.classList.add('hidden');
-  if (timer) { clearInterval(timer); timer = null; }
+// Met à jour la jauge de batterie (icône qui se vide, rouge en dessous de 20 %).
+export function setCamBattery(pct) {
+  if (!battEl) return;
+  const p = Math.max(0, Math.min(100, pct));
+  const col = p < 20 ? '#ff5a4a' : '#f3f2e6';
+  battEl.style.background = `linear-gradient(to right, ${col} 0 ${p}%, transparent ${p}%)`;
 }
+
+// Conservé pour le handler "unlock" (pause) de main.js.
+export function hideCamcorder() { setCamcorderVisible(false); }

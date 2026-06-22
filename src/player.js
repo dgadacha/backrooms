@@ -28,6 +28,10 @@ export function initInput(handlers) {
       if (e.code === 'Digit3')  handlers.switchTo('smg');
       if (e.code === 'Digit4' && game.meleeSlot) handlers.switchTo(game.meleeSlot);
       if (e.code === 'KeyE')    handlers.tryBuy();
+      if (e.code === 'KeyC') {           // caméscope : lève / baisse (vision nocturne)
+        if (game.cameraUp) game.cameraUp = false;
+        else if (game.camBattery > 0) game.cameraUp = true;
+      }
     }
   });
   addEventListener('keyup', e => keys[e.code] = false);

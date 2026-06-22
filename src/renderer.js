@@ -146,6 +146,7 @@ const CartoonPostShader = {
     uGrainIntensity:  { value: 0.0 },
     uColorQuantize:   { value: 0.0 },
     uAberration:      { value: 0.0030 },
+    uNightVision:     { value: 0.0 },
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
@@ -165,6 +166,7 @@ const CartoonPostShader = {
     uniform float uGrainIntensity;
     uniform float uColorQuantize;
     uniform float uAberration;
+    uniform float uNightVision;
     varying vec2 vUv;
 
     // ACES filmique (Narkowicz 2015)
@@ -199,6 +201,15 @@ const CartoonPostShader = {
 
       // 4. Teinte froide subtile (verdâtre/grise SH3)
       col *= uColorTint;
+
+      // 4.5 Vision nocturne (caméscope) : amplifie les basses lumières + teinte verte + bruit
+      if (uNightVision > 0.001) {
+        float lum = dot(col, vec3(0.30, 0.59, 0.11));
+        lum = pow(clamp(lum, 0.0, 1.0), 0.45) * 1.7;
+        float n = (hash(vUv * vec2(1280.0, 720.0) + uTime * 60.0) - 0.5) * 0.18;
+        vec3 nv = clamp(vec3(lum * 0.18, lum, lum * 0.30) + n, 0.0, 1.0);
+        col = mix(col, nv, uNightVision);
+      }
 
       // 5. Grain léger (effet caméra usée PS2)
       float grain = (hash(vUv * vec2(1920.0, 1080.0) + uTime) - 0.5) * uGrainIntensity;

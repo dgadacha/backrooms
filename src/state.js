@@ -45,6 +45,9 @@ export const game = {
   reloading: 0,
   shake: 0,
   swingPhase: 0,              // animation swing mêlée (1 = peak, 0 = repos)
+  // --- Caméscope (gameplay found-footage) ---
+  cameraUp: false,           // caméscope levé (overlay + vision nocturne)
+  camBattery: 100,           // batterie % (se vide caméra en main)
 };
 
 export function resetState() {
@@ -69,6 +72,8 @@ export function resetState() {
   game.shake = 0;
   game.blackout = 0;
   game.swingPhase = 0;
+  game.cameraUp = false;
+  game.camBattery = 100;
   wave.num = 0; wave.toSpawn = 0; wave.spawned = 0; wave.alive = 0;
   wave.spawnTimer = 0; wave.intermission = 2; wave.active = false;
   wave.respawnFast = 0;

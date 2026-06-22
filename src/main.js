@@ -33,7 +33,7 @@ import {
   whenZombieReady, makeZombie,
 } from './enemies.js';
 import { updateEffects, clearEffects } from './effects.js';
-import { showCamcorder, hideCamcorder } from './camcorder.js';
+import { setCamcorderVisible, setCamBattery, hideCamcorder } from './camcorder.js';
 import {
   getModelList, showModel, setView, toggleAutoRotate,
   updateGallery, getGalleryScene, getGalleryCamera,
@@ -251,12 +251,13 @@ controls.addEventListener('lock', () => {
   if      (game.state === State.MENU)  startRun();
   else if (game.state === State.PAUSE) game.state = State.PLAY;
   showHud(); hideScreens();
-  showCamcorder();
+  // caméscope baissé par défaut (vue à l'œil nu) — il se lève à la touche C
 });
 controls.addEventListener('unlock', () => {
   if (game.state === State.PLAY) {
     game.state = State.PAUSE;
     showScreen('pause');
+    game.cameraUp = false;
     hideCamcorder();
   }
 });
@@ -535,6 +536,11 @@ function loop() {
 
   // Anime le grain du CartoonPostShader (mood SH2/3 — texture caméra qui vibre)
   cartoonPass.uniforms.uTime.value = performance.now() * 0.001;
+  // Vision nocturne : fondu doux selon que le caméscope est levé (touche C).
+  {
+    const nvU = cartoonPass.uniforms.uNightVision;
+    if (nvU) nvU.value += ((game.cameraUp ? 1 : 0) - nvU.value) * Math.min(1, dt * 8);
+  }
 
   if (game.state === State.GALLERY) {
     // mode galerie : rend la scène galerie au lieu du jeu
@@ -562,6 +568,13 @@ function loop() {
     updateEffects(dt);
     updateLowHpVignette();
     updateAmbient(dt);     // grognements lointains + heartbeat = atmosphère
+    // Caméscope : la batterie se vide caméra en main ; à 0 elle s'éteint.
+    if (game.cameraUp) {
+      game.camBattery = Math.max(0, game.camBattery - dt * 1.8);
+      if (game.camBattery <= 0) game.cameraUp = false;
+    }
+    setCamcorderVisible(game.cameraUp);
+    setCamBattery(game.camBattery);
     if (dead) gameOver();
   } else {
     updateLowHpVignette();
