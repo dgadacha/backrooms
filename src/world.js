@@ -313,8 +313,10 @@ function buildBackrooms() {
   applyPBR(carpetMat,    'carpet_yellow',    BR_COLS);
   applyPBR(wallMat,      'wallpaper_yellow', 2);
   applyPBR(wallMatPerim, 'wallpaper_yellow', 12);
-  // Plafond : on garde la grille procédurale régulière (pas de ceiling_tile.png,
-  // cf. plus bas) pour que les luminaires s'alignent sur les deux axes.
+  // Plafond : ceiling_tile régénéré RÉGULIER (6×6) → repeat 13 = dalles de 0.7 m.
+  // Les centres de cellule tombent sur les intersections de joints, donc un
+  // luminaire de 1.4 m (2×2 dalles) s'aligne pile. (Procédural reste en fallback.)
+  applyPBR(ceilMat,      'ceiling_tile',     BR_COLS);
 
   // --- sol (raycast gravité) + plafond ---
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FD), carpetMat);
@@ -389,8 +391,8 @@ function buildBackrooms() {
   // Les centres de cellule tombent pile sur des centres de dalle, donc un
   // luminaire de la taille d'une dalle (léger inset pour laisser voir le joint)
   // s'aligne parfaitement sur la grille du plafond.
-  const TILE = BR_CELL / 3;
-  const fixSize = TILE * 0.94;
+  const TILE = BR_CELL / 3;          // 1.4 m = 2×2 dalles du plafond (0.7 m)
+  const fixSize = TILE;              // pile 2 dalles → bords sur les joints
   for (let col = 0; col < BR_COLS; col++) {
     for (let row = 0; row < BR_ROWS; row++) {
       const p = cellCenter(col, row);

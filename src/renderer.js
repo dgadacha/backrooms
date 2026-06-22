@@ -5,6 +5,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
 import { FOG_NEAR, FOG_FAR, FOG_COLOR, SPAWN } from './config.js';
 import { PS1_MODE, PS2_MODE, FLAT_SHADING } from './graphics-settings.js';
 
@@ -230,7 +231,14 @@ const _composerRT = new THREE.WebGLRenderTarget(1, 1, {
   samples: 4,
 });
 export const composer = new EffectComposer(renderer, _composerRT);
-composer.addPass(new RenderPass(scene, camera));
+// SSAO : occlusion ambiante en screen-space → ombres de contact dans les coins,
+// jonctions mur/sol/plafond, sous les cloisons. Ancre toute la géo (gros gain
+// réalisme). Rend la scène lui-même → remplace le RenderPass.
+export const ssaoPass = new SSAOPass(scene, camera, 1, 1);
+ssaoPass.kernelRadius = 0.5;     // rayon AO ~0.5 m (échelle mètres)
+ssaoPass.minDistance = 0.004;
+ssaoPass.maxDistance = 0.10;
+composer.addPass(ssaoPass);
 // Bloom : les sources émissives (néons) bavent → halo cinématique. threshold
 // élevé pour ne capter que les lampes, pas tout l'écran.
 export const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.6, 0.5, 0.62);
