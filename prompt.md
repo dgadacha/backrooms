@@ -107,9 +107,29 @@ A single square fluorescent ceiling light panel, viewed straight from below, fla
 
 ---
 
-## 6. À VENIR — modèles 3D (Meshy, plus tard)
+## 6. Modèles 3D (Meshy)
 
-Pas pour tout de suite — placeholder pour l'itération « entité ».
+- **Corps du joueur — first-person body** ⭐ ACTIF : personnage complet vu à la
+  1re personne (on voit bras / torse / jambes en baissant les yeux, ils tanguent
+  en courant). Le code charge déjà `public/models/player.glb` (fallback =
+  placeholder en cubes). Dépose le GLB, recharge, c'est branché.
+  - **Pose** : debout, **bras le long du corps ou légèrement en avant** (PAS de
+    grand T-pose : sinon les bras partent sur les côtés, hors champ).
+  - **Tête** : peu importe (la caméra est à sa place). Masquée automatiquement si
+    c'est un mesh séparé nommé `head/face/hair/…` ; si ton export est un seul mesh
+    et que la tête dépasse, dis-le-moi, je la coupe par seuil de hauteur.
+  - **Tenue** : found-footage / personne lambda (jean, veste, baskets).
+  - **Meshy** : Image to 3D, Low Poly, **rig + anim de marche si possible** (sinon
+    statique, le bob procédural est déjà là).
+  - **Réglages** dans `src/player-body.js` au besoin : `TARGET_HEIGHT` (échelle),
+    `MODEL_FACING` (s'il regarde à l'envers), `BACK_OFFSET` (avant/arrière).
+
+  Prompt concept Midjourney (→ Meshy) :
+```
+Full body character concept sheet, ordinary man in his 30s, plain dark jacket, jeans and worn sneakers, standing straight, arms relaxed down at his sides, neutral A-pose, front view, full figure from head to toe, plain neutral grey studio background, even diffuse lighting, no shadows, photorealistic, high detail --ar 2:3 --style raw --v 6.1
+```
+
+### À venir
 
 - **Entité qui traque** (itér. 3) : créature liminale cauchemardesque. Workflow
   Midjourney (image de concept) → **Meshy AI** (Image to 3D, Low Poly, rig si

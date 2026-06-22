@@ -23,6 +23,7 @@ import {
 // 'bus_depot'/'terminus' réactive le jeu de zombies d'origine.
 const IS_BACKROOMS = ACTIVE_MAP === 'backrooms';
 import { controls, initInput, updatePlayer, updateShake } from './player.js';
+import { initPlayerBody, updatePlayerBody } from './player-body.js';
 import {
   shoot, startReload, switchWeapon, giveWeapon, refillAmmo,
   applyMedkit, applyArmor, unlockRegen, unlockNightVision, unlockLight,
@@ -75,6 +76,10 @@ setActionHandlers({
     camera.rotation.set(0, zone.playerSpawnYaw, 0, 'YXZ');
   }
 }
+
+// FIRST-PERSON BODY (Backrooms) : corps visible du joueur (bras/torse/jambes)
+// quand on baisse les yeux ou qu'on court. Charge player.glb (fallback placeholder).
+if (IS_BACKROOMS) initPlayerBody();
 
 // =============================================================================
 //  PROMPT DE BORNES
@@ -589,6 +594,7 @@ function loop() {
 
   if (game.state === State.PLAY) {
     updatePlayer(dt);
+    if (IS_BACKROOMS) updatePlayerBody(dt);
     let dead = false;
     if (!IS_BACKROOMS) {
       // gameplay horde (désactivé en Backrooms) : zombies, vagues, perks, achats
