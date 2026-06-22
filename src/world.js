@@ -404,33 +404,6 @@ function buildBackrooms() {
       scene.add(panel);
     }
   }
-  // God rays : sprites "faisceau" doux (billboard face caméra, additif). Texture
-  // = cœur vertical lumineux, falloff horizontal doux + fade vers le bas. Le
-  // billboard évite l'aspect "cône solide" d'une géométrie.
-  const GR_H = CH - 0.5;
-  const beamTex = (() => {
-    const c = document.createElement('canvas'); c.width = c.height = 128;
-    const g = c.getContext('2d');
-    const hg = g.createLinearGradient(0, 0, 128, 0);       // falloff horizontal doux
-    hg.addColorStop(0.0, 'rgba(255,255,255,0)');
-    hg.addColorStop(0.5, 'rgba(255,255,255,1)');
-    hg.addColorStop(1.0, 'rgba(255,255,255,0)');
-    g.fillStyle = hg; g.fillRect(0, 0, 128, 128);
-    g.globalCompositeOperation = 'destination-in';         // fade vertical haut→bas
-    const vg = g.createLinearGradient(0, 0, 0, 128);
-    vg.addColorStop(0.0, 'rgba(255,255,255,0.9)');
-    vg.addColorStop(1.0, 'rgba(255,255,255,0)');
-    g.fillStyle = vg; g.fillRect(0, 0, 128, 128);
-    const t = new THREE.CanvasTexture(c);
-    t.colorSpace = THREE.SRGBColorSpace;
-    return t;
-  })();
-  const beamMat = new THREE.MeshBasicMaterial({
-    map: beamTex, color: 0xffe6a8, transparent: true, opacity: 0.55,
-    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
-  });
-  const beamGeo = new THREE.PlaneGeometry(1.7, GR_H);
-
   for (let col = 1; col < BR_COLS; col += 3) {
     for (let row = 1; row < BR_ROWS; row += 3) {
       if (Math.random() < 0.22) continue;          // cellule sans lampe → zone noire
@@ -445,18 +418,6 @@ function buildBackrooms() {
       scene.add(l);
       zoneNeons.push(l);
       addGlow(p.x, CH - 0.18, p.z, 0xfff4c2, dramatic ? 0.9 : 1.3);
-      // faisceau lumineux : 2 quads croisés VERTICAUX (pas de billboard → reste
-      // droit quel que soit l'angle de vue). Soft via la texture beam additive.
-      const beamY = 0.5 + GR_H / 2;
-      const q1 = new THREE.Mesh(beamGeo, beamMat);
-      q1.position.set(p.x, beamY, p.z);
-      q1.userData._skipOutline = true;
-      scene.add(q1);
-      const q2 = new THREE.Mesh(beamGeo, beamMat);
-      q2.position.set(p.x, beamY, p.z);
-      q2.rotation.y = Math.PI / 2;
-      q2.userData._skipOutline = true;
-      scene.add(q2);
     }
   }
 
