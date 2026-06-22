@@ -113,6 +113,20 @@ const floorMeshes = [];
 export function getFloorMeshes() { return floorMeshes; }
 function registerFloor(mesh) { mesh.userData.isFloor = true; floorMeshes.push(mesh); return mesh; }
 
+// Niveau de lumière approximatif à une position (0 sombre → 1 éclairé) : base
+// ambient + somme des néons ALLUMÉS proches. Sert à la santé mentale (le noir
+// rend fou) et plus tard à l'entité. zoneNeons (PointLight) défini plus bas.
+export function getLightLevelAt(pos) {
+  let lvl = 0.25;                                   // ambient + hemi
+  for (const n of zoneNeons) {
+    if (!n.isPointLight || n.intensity < 0.05) continue;
+    const range = n.distance || 12;
+    const d = n.position.distanceTo(pos);
+    if (d < range) lvl += n.intensity * (1 - d / range) * 0.55;
+  }
+  return Math.min(1, lvl);
+}
+
 // =============================================================================
 //  HELPERS — texture procédurale + halo glow
 // =============================================================================

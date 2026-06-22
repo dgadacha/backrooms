@@ -15,7 +15,7 @@ import {
 import {
   updateWorld, buyStations, endBlackout,
   switchToZone, getZone, setActionHandlers,
-  importMapJson, MAP_ACTIVE_KEY, MAP_LIST_KEY, ACTIVE_MAP,
+  importMapJson, MAP_ACTIVE_KEY, MAP_LIST_KEY, ACTIVE_MAP, getLightLevelAt,
 } from './world.js';
 // Fork BACKROOMS : coupe tout le gameplay horde (vagues, zombies, achats, perks)
 // quand la map active est le Niveau 0. Repasser ACTIVE_MAP (world.js) sur
@@ -423,12 +423,28 @@ function resetRun() {
 }
 function gameOver() {
   game.state = State.OVER;
-  document.getElementById('go-stats').innerHTML =
-    `WAVE REACHED <span class="big-num">${wave.num}</span><br/>` +
-    `ZOMBIES KILLED <span class="big-num">${player.kills}</span><br/>` +
-    `MONEY <span class="big-num">$${player.money}</span>`;
+  document.getElementById('go-stats').innerHTML = IS_BACKROOMS
+    ? `NIVEAU ATTEINT <span class="big-num">${game.level}</span>`
+    : `WAVE REACHED <span class="big-num">${wave.num}</span><br/>` +
+      `ZOMBIES KILLED <span class="big-num">${player.kills}</span><br/>` +
+      `MONEY <span class="big-num">$${player.money}</span>`;
   controls.unlock();
   showScreen('gameover');
+}
+
+// =============================================================================
+//  SANTÉ MENTALE (Backrooms) — baisse en continu, plus vite dans le noir.
+//  Feedback immersif : vignette qui se referme + grain qui monte. 0 = game over.
+// =============================================================================
+function updateSanity(dt) {
+  const light = getLightLevelAt(camera.position);     // 0 sombre → 1 éclairé
+  const darkness = Math.max(0, 1 - light);
+  player.sanity = Math.max(0, player.sanity - (0.4 + darkness * 3.0) * dt);
+  const fear = 1 - player.sanity / 100;
+  const pulse = player.sanity < 35 ? (0.5 + 0.5 * Math.sin(performance.now() * 0.006)) * 0.12 : 0;
+  cartoonPass.uniforms.uVignetteStrength.value = 0.58 + fear * 0.36 + pulse;
+  cartoonPass.uniforms.uGrainIntensity.value   = 0.085 + fear * 0.10;
+  if (player.sanity <= 0) gameOver();
 }
 
 // =============================================================================
@@ -575,6 +591,7 @@ function loop() {
     }
     setCamcorderVisible(game.cameraUp);
     setCamBattery(game.camBattery);
+    if (IS_BACKROOMS) updateSanity(dt);
     if (dead) gameOver();
   } else {
     updateLowHpVignette();

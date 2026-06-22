@@ -4,6 +4,7 @@ export const State = { MENU:'menu', PLAY:'play', PAUSE:'pause', OVER:'over', GAL
 
 export const player = {
   hp: 100,
+  sanity: 100,               // santé mentale (Backrooms) — baisse dans le noir, 0 = mort
   armor: 0,
   money: START_MONEY,
   kills: 0,
@@ -45,6 +46,7 @@ export const game = {
   reloading: 0,
   shake: 0,
   swingPhase: 0,              // animation swing mêlée (1 = peak, 0 = repos)
+  level: 0,                  // niveau de profondeur atteint (descente)
   // --- Caméscope (gameplay found-footage) ---
   cameraUp: false,           // caméscope levé (overlay + vision nocturne)
   camBattery: 100,           // batterie % (se vide caméra en main)
@@ -52,6 +54,7 @@ export const game = {
 
 export function resetState() {
   player.hp = 100;
+  player.sanity = 100;
   player.armor = 0;
   player.money = START_MONEY;
   player.kills = 0;
@@ -72,6 +75,7 @@ export function resetState() {
   game.shake = 0;
   game.blackout = 0;
   game.swingPhase = 0;
+  game.level = 0;
   game.cameraUp = false;
   game.camBattery = 100;
   wave.num = 0; wave.toSpawn = 0; wave.spawned = 0; wave.alive = 0;
