@@ -4,44 +4,43 @@
    ===================================================== */
 
 :root {
-  /* Palette CALL OF ZOMBIES — orange brûlé / crème / noir.
-     Cohérente avec l'écran de chargement (#e35d3a → #ffb347 sur fond noir). */
-  --accent:       #ffb347;       /* orange clair — highlight / accent UI */
-  --accent-deep:  #c14a2a;       /* orange foncé pour bordures et ombres */
-  --accent-soft:  rgba(255,179,71,0.15);
-  --primary:      #e35d3a;       /* orange brûlé — boutons primaires */
-  --primary-deep: #a83a1f;
-  --primary-soft: rgba(227,93,58,0.18);
-  --danger:       #ff4438;       /* rouge alarme vif (HP critique) */
-  --danger-deep:  #b01d18;
-  --surface:      #14141c;       /* cards/modales noir bleuté */
-  --surface-2:    #1f1f2a;       /* hover */
-  --border:       rgba(255,179,71,0.18);
-  --border-strong:rgba(255,179,71,0.34);
-  --text:         #f7f1d8;       /* crème (titre loading screen) */
-  --text-muted:   #b8ad94;       /* crème grisé */
-  --text-dim:     #7a705e;
+  /* Palette BACKROOMS found-footage — quasi-noir / blanc os / ambre sale / rouge REC. */
+  --accent:       #d8b24a;       /* ambre sale — highlight / accent UI */
+  --accent-deep:  #7c6326;
+  --accent-soft:  rgba(216,178,74,0.12);
+  --primary:      #c9a94e;       /* ambre — boutons primaires */
+  --primary-deep: #6f5a24;
+  --primary-soft: rgba(201,169,78,0.14);
+  --danger:       #ff2a1c;       /* rouge REC */
+  --danger-deep:  #a01209;
+  --surface:      #111110;       /* cards/modales quasi-noir */
+  --surface-2:    #1b1a16;       /* hover */
+  --border:       rgba(216,178,74,0.16);
+  --border-strong:rgba(216,178,74,0.30);
+  --text:         #e9e6d8;       /* blanc os */
+  --text-muted:   #8f8a76;       /* gris sale */
+  --text-dim:     #57533f;
   --radius:       14px;
   --radius-lg:    20px;
-  --amber:        #ffb347;
-  --money:        #4cd07a;
-  --health:       #ff4438;
-  --ammo:         #ffb347;
-  --perk:         #ffb347;
-  --wave:         #e35d3a;
-  --bg:           #0a0a14;       /* noir bleuté très sombre (loading screen) */
-  --panel:        rgba(20,20,28,0.88);
-  --panel-bd:     rgba(255,179,71,0.18);
+  --amber:        #d8b24a;
+  --money:        #b8a84c;
+  --health:       #ff2a1c;
+  --ammo:         #d8b24a;
+  --perk:         #d8b24a;
+  --wave:         #c9a94e;
+  --bg:           #08080a;       /* quasi noir */
+  --panel:        rgba(14,14,12,0.9);
+  --panel-bd:     rgba(216,178,74,0.16);
   /* alias legacy retro-compat (anciens noms utilisés ailleurs dans le CSS) */
-  --red:          #ff4438;
-  --red-deep:     #b01d18;
-  --red-soft:     rgba(255,68,56,0.15);
+  --red:          #ff2a1c;
+  --red-deep:     #a01209;
+  --red-soft:     rgba(255,42,28,0.14);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
 html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); }
 body {
-  font-family: "Fredoka", "Inter", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   color:#fff; cursor:default; user-select:none;
   -webkit-font-smoothing:antialiased;
   background: var(--bg);
@@ -87,7 +86,7 @@ body {
    ===================================================== */
 #hud {
   position: fixed; inset: 0; pointer-events: none; z-index: 4;
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   letter-spacing: 0.02em;
   color: var(--text);
 }
@@ -96,8 +95,8 @@ body {
 /* --- top-left : compteur FPS — gros et lisible --- */
 #fps-counter {
   position: absolute; top: 18px; left: 22px;
-  font-family: "Russo One", monospace;
-  font-size: 22px; font-weight: 400;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 20px; font-weight: 500;
   letter-spacing: 0.04em;
   color: var(--money);
   background: transparent;
@@ -116,7 +115,7 @@ body {
   text-shadow: 0 2px 6px rgba(0,0,0,0.9), -1px 0 0 rgba(140, 30, 30, 0.35);
 }
 #points-label {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 12px; font-weight: 400;
   font-style: normal;
   letter-spacing: 0.18em;
@@ -125,7 +124,7 @@ body {
   line-height: 1;
 }
 #points-total {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-weight: 500;
   font-style: normal;
   font-size: 38px;
@@ -136,7 +135,7 @@ body {
 }
 #zombies-left-line {
   margin-top: 6px;
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 13px;
   font-style: normal;
   color: var(--text-muted);
@@ -158,7 +157,7 @@ body {
   text-shadow: 0 2px 6px rgba(0,0,0,0.9), -1px 0 0 rgba(140, 30, 30, 0.35);
 }
 #round-label {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 12px; font-weight: 400;
   font-style: normal;
   letter-spacing: 0.18em;
@@ -167,7 +166,7 @@ body {
   margin-bottom: 4px;
 }
 #round-roman {
-  font-family: "Bangers", "Russo One", sans-serif;
+  font-family: "Oswald", "Inter", sans-serif;
   font-weight: 400;
   font-size: 62px;
   letter-spacing: 0.04em;
@@ -180,7 +179,7 @@ body {
 #round-flash {
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%,-50%);
-  font-family: "Bangers", "Russo One", sans-serif;
+  font-family: "Oswald", "Inter", sans-serif;
   font-weight: 400;
   font-size: clamp(120px, 18vw, 220px);
   line-height: 0.9;
@@ -211,7 +210,7 @@ body {
 .score-popup {
   position: absolute; left: 50%; top: 46%;
   transform: translate(-50%, 0);
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-weight: 500;
   font-style: normal;
   font-size: 22px;
@@ -283,7 +282,7 @@ body {
   position: absolute;
   right: 10px; top: 50%;
   transform: translateY(-50%);
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 14px; font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 0 #000, 0 2px 4px rgba(0,0,0,0.7);
@@ -313,7 +312,7 @@ body {
   position: absolute;
   right: 10px; top: 50%;
   transform: translateY(-50%);
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 12px; font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 0 #000, 0 2px 4px rgba(0,0,0,0.7);
@@ -337,7 +336,7 @@ body {
 }
 #ammo-line {
   display: flex; align-items: baseline; justify-content: flex-end; gap: 4px;
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   letter-spacing: 0.02em;
 }
 #ammo-mag {
@@ -363,7 +362,7 @@ body {
   font-size: 18px; color: #b070ff;
 }
 #weapon-name {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 12px; font-weight: 400;
   font-style: normal;
   letter-spacing: 0.18em;
@@ -372,7 +371,7 @@ body {
   margin-top: 4px;
 }
 #reloading {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   color: #c8a838;
   font-size: 13px; font-weight: 400;
   font-style: normal;
@@ -407,7 +406,7 @@ body {
   display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
 .toast {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-weight: 500;
   font-style: normal;
   color: var(--text);
@@ -428,7 +427,7 @@ body {
   border-radius: 0;
   color: #c8a838;
   padding: 6px 0;
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 17px;
   font-style: normal;
   font-weight: 400;
@@ -440,7 +439,7 @@ body {
 #event-banner {
   position: absolute; left: 0; right: 0; top: 30%;
   text-align: center;
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-weight: 500;
   font-style: normal;
   font-size: clamp(40px, 5.5vw, 64px);
@@ -500,7 +499,7 @@ body {
    Fonts chunky display (Bangers / Fredoka), palette vibrante
    ===================================================== */
 body {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -511,7 +510,7 @@ body {
    Disparait en fade quand le LoadingManager a tout chargé. */
 #loading-screen {
   position: fixed; inset: 0; z-index: 100;
-  background: radial-gradient(ellipse at center, #0a0a14 0%, #04040a 80%);
+  background: radial-gradient(ellipse at center, #0c0c0a 0%, #050505 85%);
   display: flex; align-items: center; justify-content: center;
   color: #fff;
   font-family: 'Inter', system-ui, sans-serif;
@@ -524,14 +523,15 @@ body {
   width: min(520px, 80vw);
 }
 .loading-title {
-  font-family: 'Bangers', 'Russo One', sans-serif;
+  font-family: "Oswald", "Inter", sans-serif;
   font-size: clamp(40px, 8vw, 92px);
   letter-spacing: 2px; line-height: 0.95;
   white-space: nowrap;
   text-shadow: 0 4px 20px rgba(0,0,0,0.6);
 }
-.loading-title .t-dead { color: #f7f1d8; }
-.loading-title .t-mall { color: #e35d3a; }
+.loading-title { font-family: "Oswald", "Inter", sans-serif; letter-spacing: 0.16em; }
+.loading-title .t-dead { color: #e9e6d8; }
+.loading-title .t-mall { color: #d8b24a; }
 .loading-bar {
   width: 100%; height: 14px;
   background: rgba(255,255,255,0.08);
@@ -541,15 +541,16 @@ body {
 }
 #loading-bar-fill {
   height: 100%; width: 0%;
-  background: linear-gradient(90deg, #e35d3a, #ffb347);
-  box-shadow: 0 0 12px rgba(227,93,58,0.6);
+  background: linear-gradient(90deg, #6f5a24, #d8b24a);
+  box-shadow: 0 0 12px rgba(216,178,74,0.5);
   transition: width 0.18s ease-out;
 }
 #loading-text {
-  font-size: 24px; font-weight: 600;
-  letter-spacing: 1px;
-  color: #ffb347;
-  text-shadow: 0 0 10px rgba(255,179,71,0.4);
+  font-size: 22px; font-weight: 600;
+  letter-spacing: 3px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: #d8b24a;
+  text-shadow: 0 0 10px rgba(216,178,74,0.35);
 }
 #loading-sub {
   font-size: 13px;
@@ -565,7 +566,7 @@ body {
   text-align: center;
   /* Dégradé noir bleuté cohérent avec l'écran de chargement Call of Zombies */
   background:
-    radial-gradient(ellipse 110% 90% at 50% 30%, #1a1418 0%, var(--bg) 65%, #020208 100%);
+    radial-gradient(ellipse 120% 90% at 50% 35%, #14130f 0%, var(--bg) 58%, #000 100%);
   overflow-y: auto;
 }
 
@@ -606,25 +607,22 @@ body {
 
 /* ----- titre Call of Zombies — display chunky impact ----- */
 .title {
-  font-family: "Bangers", "Russo One", sans-serif;
-  font-weight: 400;
-  font-size: clamp(46px, 8vw, 110px);
+  font-family: "Oswald", "Inter", sans-serif;
+  font-weight: 600;
+  font-size: clamp(42px, 7.5vw, 100px);
   line-height: 0.95;
-  letter-spacing: 0.04em;
-  margin: 0 0 20px;
-  text-shadow:
-    0 3px 0 var(--primary-deep),
-    0 6px 0 rgba(0, 0, 0, 0.55),
-    0 10px 24px rgba(0, 0, 0, 0.7);
+  letter-spacing: 0.22em;
+  margin: 0 0 22px;
+  text-shadow: 0 0 28px rgba(216,178,74,0.26), 0 2px 34px rgba(0,0,0,0.85);
   color: var(--text);
   text-transform: uppercase;
   white-space: nowrap;
 }
-.t-dead { color: var(--text); }           /* crème — "Call of" */
-.t-mall { color: var(--primary); }        /* orange brûlé — "Zombies" */
+.t-dead { color: var(--text); }            /* blanc os — "THE" */
+.t-mall { color: var(--accent); }          /* ambre sale — "BACKROOMS" */
 
 .tagline {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: clamp(15px, 1.3vw, 17px);
   font-weight: 400;
   font-style: normal;
@@ -646,52 +644,55 @@ body {
 }
 /* Boutons menu style Fortnite : chunky, rounded, drop-shadow épaisse */
 .sh-menu-item {
-  background: var(--surface);
-  border: 3px solid var(--border-strong);
-  font-family: "Fredoka", "Inter", sans-serif;
-  font-weight: 600;
-  font-size: 20px;
-  color: var(--text);
-  letter-spacing: 0.04em;
+  background: transparent;
+  border: none;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--text-muted);
+  letter-spacing: 0.34em;
   cursor: pointer;
-  padding: 14px 36px;
-  border-radius: 12px;
+  padding: 13px 28px;
+  border-radius: 0;
   position: relative;
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  transition: color 160ms ease, letter-spacing 220ms ease, background 160ms ease;
   text-decoration: none;
   text-transform: uppercase;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 6px 18px rgba(0,0,0,0.3);
-  min-width: 280px;
+  min-width: 260px;
   text-align: center;
+}
+.sh-menu-item::before {
+  content: ""; position: absolute; left: 14px; top: 50%;
+  width: 0; height: 1px; background: var(--accent);
+  transform: translateY(-50%); transition: width 200ms ease;
 }
 .sh-menu-item:hover,
 .sh-menu-item:focus-visible {
-  background: var(--surface-2);
-  border-color: var(--accent);
-  transform: translateY(-2px);
+  color: var(--text);
+  background: rgba(216,178,74,0.04);
+  letter-spacing: 0.42em;
   outline: none;
 }
-.sh-menu-item:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 rgba(0,0,0,0.4);
-}
-/* Bouton primaire (Commencer / Reprendre) : jaune chaud */
+.sh-menu-item:hover::before,
+.sh-menu-item:focus-visible::before { width: 9px; }
+.sh-menu-item:active { color: var(--accent); }
+
+/* Bouton primaire (Commencer / Reprendre) : os clair + soulignement ambre */
 .sh-menu-primary {
-  background: var(--accent);
-  color: #1a1408;
-  border-color: var(--accent-deep);
-  font-weight: 700;
-  font-size: 22px;
-  box-shadow: 0 4px 0 var(--accent-deep), 0 6px 18px rgba(255,210,58,0.25);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 16px;
 }
-.sh-menu-primary:hover {
-  background: #ffe46c;
-  border-color: var(--accent-deep);
-  color: #1a1408;
+.sh-menu-primary::after {
+  content: ""; position: absolute; left: 50%; bottom: 4px;
+  width: 30px; height: 2px; background: var(--accent);
+  transform: translateX(-50%);
+  box-shadow: 0 0 10px rgba(216,178,74,0.55);
+  transition: width 200ms ease;
 }
-.sh-menu-primary:active {
-  box-shadow: 0 2px 0 var(--accent-deep);
-}
+.sh-menu-primary:hover { color: #fff; }
+.sh-menu-primary:hover::after { width: 60px; }
+.sh-menu-primary:active { color: var(--accent); }
 
 /* ----- contrôles : minimaliste type "manuel d'instruction" ----- */
 .controls {
@@ -701,7 +702,7 @@ body {
   padding-top: 18px;
 }
 .controls-title {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 13px; font-weight: 400;
   font-style: normal;
   letter-spacing: 0.15em;
@@ -718,11 +719,11 @@ body {
   padding: 6px 0;
   font-size: 14px;
   color: var(--text-muted);
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 .ctrl kbd {
-  font-family: "Russo One", monospace;
-  font-size: 12px; font-weight: 400;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; font-weight: 500;
   padding: 2px 8px;
   background: transparent;
   border: 1px solid rgba(216, 210, 196, 0.25);
@@ -735,29 +736,26 @@ body {
 /* ----- pause + game over ----- */
 .pause-inner { padding-top: 80px; }
 .pause-hint {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   color: var(--text-muted);
   font-size: 16px;
   margin: 0 0 40px;
   letter-spacing: 0.02em;
 }
 .title-mini {
-  font-family: "Bangers", "Russo One", sans-serif;
-  font-weight: 400;
-  font-size: clamp(40px, 5.5vw, 72px);
-  letter-spacing: 0.04em;
+  font-family: "Oswald", "Inter", sans-serif;
+  font-weight: 500;
+  font-size: clamp(36px, 5vw, 66px);
+  letter-spacing: 0.2em;
   color: var(--text);
   margin: 0 0 24px;
   text-transform: uppercase;
-  text-shadow:
-    0 3px 0 var(--primary-deep),
-    0 6px 0 rgba(0,0,0,0.5),
-    0 10px 30px rgba(0,0,0,0.6);
+  text-shadow: 0 0 22px rgba(216,178,74,0.2), 0 2px 24px rgba(0,0,0,0.8);
 }
 .sh-dead { color: var(--accent); }
 
 #go-stats {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   color: var(--text-muted);
   font-size: 16px;
   line-height: 1.8;
@@ -765,7 +763,7 @@ body {
 }
 #go-stats .big-num {
   color: var(--accent);
-  font-family: "Bangers", "Russo One", sans-serif;
+  font-family: "Oswald", "Inter", sans-serif;
   font-weight: 400;
   font-size: 32px;
   letter-spacing: 0.04em;
@@ -794,7 +792,7 @@ body {
   background: transparent;
   border: 0;
   color: var(--text-muted);
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-weight: 400;
   font-size: 15px;
   padding: 6px 14px;
@@ -808,7 +806,7 @@ body {
   margin-top: 40px;
 }
 .settings-section-title {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 13px; font-weight: 400;
   font-style: normal;
   letter-spacing: 0.18em;
@@ -848,7 +846,7 @@ body {
   padding: 8px 16px;
   cursor: pointer;
   text-align: left;
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   transition: color 200ms ease, border-color 200ms ease;
 }
 .preset-card:hover {
@@ -861,7 +859,7 @@ body {
 }
 .preset-card.active .preset-name { color: var(--danger); }
 .preset-name {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 18px; font-weight: 500;
   letter-spacing: 0.02em;
   color: inherit;
@@ -887,7 +885,7 @@ body {
   background: transparent;
   border: 0;
   border-left: 1px solid rgba(216, 210, 196, 0.0);
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 16px;
   font-style: normal;
   color: var(--text-muted);
@@ -948,7 +946,7 @@ body {
   background: var(--surface);
   border: 2px solid var(--border-strong);
   padding: 6px 14px;
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-weight: 600;
   font-size: 14px;
   color: var(--text-muted);
@@ -974,7 +972,7 @@ body {
    ÉCRAN INTERMÉDIAIRE — sélection de carte avant l'éditeur
    ===================================================== */
 .editor-browser-list-title {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 13px;
   color: var(--text-muted);
   letter-spacing: 0.12em;
@@ -992,7 +990,7 @@ body {
   overflow-y: auto;
 }
 .editor-browser-empty {
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 13px;
   color: var(--text-muted);
   text-align: center;
@@ -1004,7 +1002,7 @@ body {
   border: 0;
   border-left: 1px solid rgba(216, 210, 196, 0.0);
   padding: 10px 16px;
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 16px;
   color: var(--text-muted);
   cursor: pointer;
@@ -1032,7 +1030,7 @@ body {
   background: transparent;
   border: 0;
   color: var(--text-muted);
-  font-family: "Fredoka", "Inter", sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 13px;
   font-style: normal;
   cursor: pointer;
@@ -1583,7 +1581,7 @@ body {
   position: fixed; inset: 0;
   pointer-events: none;
   z-index: 5;
-  font-family: "Courier New", ui-monospace, monospace;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
   color: #f3f2e6;
   text-shadow: 0 0 5px rgba(0,0,0,0.95);
   animation: cam-jitter 4s steps(30) infinite;
@@ -1648,3 +1646,46 @@ body {
   50% { transform: translate(-0.5px, 0.3px); }
   75% { transform: translate(0.3px, 0.5px); }
 }
+
+/* ============================================================================
+   DA found-footage des écrans menu + masquage du HUD horde (zombie)
+   ============================================================================ */
+/* scanlines fines sur les écrans (menu / pause / settings / gameover) */
+.screen::before {
+  content: ""; position: absolute; inset: 0;
+  pointer-events: none; z-index: 2;
+  background: repeating-linear-gradient(to bottom,
+    rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.16) 2px, rgba(0,0,0,0.16) 3px);
+  opacity: 0.55;
+}
+/* HUD horde masqué (POINTS / VAGUE / munitions / perks / réticule) — il sera
+   remplacé par la santé mentale + la pile de lampe à l'itération survie. */
+#hud-top-right, #round-display, #round-flash, #score-popups,
+#perk-icons, #hud-bottom-right, #crosshair, #health-bar, #armor-bar,
+#zombies-left-line, #weapon-name, #ammo-line { display: none !important; }
+
+/* ============================================================================
+   POLISH — apparition cinématique du menu + respiration du titre
+   ============================================================================ */
+@keyframes menu-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes title-in {       /* révélation : flou + tracking qui se resserrent */
+  from { opacity: 0; letter-spacing: 0.55em; filter: blur(7px); }
+  to   { opacity: 1; letter-spacing: 0.22em; filter: blur(0); }
+}
+@keyframes title-glow {     /* halo ambre qui respire doucement */
+  0%, 100% { text-shadow: 0 0 22px rgba(216,178,74,0.15), 0 2px 34px rgba(0,0,0,0.85); }
+  50%      { text-shadow: 0 0 42px rgba(216,178,74,0.36), 0 2px 34px rgba(0,0,0,0.85); }
+}
+#menu .title {
+  animation: title-in 1.2s cubic-bezier(.2,.7,.2,1) both,
+             title-glow 5.5s ease-in-out 1.2s infinite;
+}
+#menu .sh-menu-item { animation: menu-rise 0.7s ease both; }
+#menu .sh-menu-item:nth-child(1) { animation-delay: 0.5s; }
+#menu .sh-menu-item:nth-child(2) { animation-delay: 0.62s; }
+#menu .sh-menu-item:nth-child(3) { animation-delay: 0.74s; }
+#menu .controls { animation: menu-rise 0.8s ease 0.95s both; }
