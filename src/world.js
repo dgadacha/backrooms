@@ -364,11 +364,17 @@ function buildBackrooms() {
     x: -BR_HALFX + (c + 0.5) * BR_CELL,
     z: -BR_HALFZ + (r + 0.5) * BR_CELL,
   });
+  // Le plafond ceiling_tile = 3×3 dalles par tuile → 1 dalle = BR_CELL/3 = 1.4 m.
+  // Les centres de cellule tombent pile sur des centres de dalle, donc un
+  // luminaire de la taille d'une dalle (léger inset pour laisser voir le joint)
+  // s'aligne parfaitement sur la grille du plafond.
+  const TILE = BR_CELL / 3;
+  const fixSize = TILE * 0.94;
   for (let col = 0; col < BR_COLS; col++) {
     for (let row = 0; row < BR_ROWS; row++) {
       const p = cellCenter(col, row);
       const dead = Math.random() < 0.22;    // ~1 panneau sur 5 grillé
-      const panel = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.3), dead ? fixtureDead : fixtureLit);
+      const panel = new THREE.Mesh(new THREE.PlaneGeometry(fixSize, fixSize), dead ? fixtureDead : fixtureLit);
       panel.rotation.x = Math.PI / 2;        // face vers le bas
       panel.position.set(p.x, CH - 0.02, p.z);
       panel.userData._skipOutline = true;
