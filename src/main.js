@@ -33,6 +33,7 @@ import {
   whenZombieReady, makeZombie,
 } from './enemies.js';
 import { updateEffects, clearEffects } from './effects.js';
+import { showCamcorder, hideCamcorder } from './camcorder.js';
 import {
   getModelList, showModel, setView, toggleAutoRotate,
   updateGallery, getGalleryScene, getGalleryCamera,
@@ -250,11 +251,13 @@ controls.addEventListener('lock', () => {
   if      (game.state === State.MENU)  startRun();
   else if (game.state === State.PAUSE) game.state = State.PLAY;
   showHud(); hideScreens();
+  showCamcorder();
 });
 controls.addEventListener('unlock', () => {
   if (game.state === State.PLAY) {
     game.state = State.PAUSE;
     showScreen('pause');
+    hideCamcorder();
   }
 });
 
