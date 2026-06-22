@@ -431,23 +431,70 @@ function buildBackrooms(opts = {}) {
     }
   }
 
-  // --- FAILLE / sortie no-clip : à une cellule aléatoire hors du spawn ---
+  // --- PORTE de descente : sur une cellule aléatoire hors du spawn ---
+  // Iconique Backrooms : une porte entrebâillée, du noir absolu derrière, et
+  // une lueur cyan qui fuit par l'entrebâillement (l'au-delà) → repérable de loin.
+  // La franchir (E à proximité) = descendre d'un niveau.
   let fc, fr;
   do { fc = Math.floor(Math.random() * BR_COLS); fr = Math.floor(Math.random() * BR_ROWS); }
   while (safe(fc, fr));                           // jamais sur le spawn
   const fp = cellCenter(fc, fr);
   exitPos.set(fp.x, EYE, fp.z);
   hasExit = true;
-  // Rift "void" : croix de plans très sombres (tranche dans la réalité) + halo
-  // cyan (PointLight) qui éclaire les alentours en bleu → repérable de loin.
-  const riftMat = new THREE.MeshBasicMaterial({ color: 0x06080e, side: THREE.DoubleSide });
-  const riftGeo = new THREE.PlaneGeometry(0.85, 2.6);
-  const r1 = new THREE.Mesh(riftGeo, riftMat);
-  r1.position.set(fp.x, 1.3, fp.z); r1.userData._skipOutline = true; levelGroup.add(r1);
-  const r2 = new THREE.Mesh(riftGeo, riftMat);
-  r2.position.set(fp.x, 1.3, fp.z); r2.rotation.y = Math.PI / 2; r2.userData._skipOutline = true; levelGroup.add(r2);
-  const riftLight = new THREE.PointLight(0x7fd2ff, 2.6, 11, 2);
-  riftLight.position.set(fp.x, 1.4, fp.z); levelGroup.add(riftLight);
+
+  const door = new THREE.Group();
+  door.position.set(fp.x, 0, fp.z);
+  door.rotation.y = Math.floor(Math.random() * 4) * (Math.PI / 2);   // alignée sur la grille
+
+  const DW = 1.0, DH = 2.15, JAMB = 0.11, DDEPTH = 0.16;
+  // Cadre bois usé : contraste avec le néant noir ET le mur jaune → lit comme une porte
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x4a3322, roughness: 0.85, metalness: 0.0 });
+  const addPart = (geo, x, y, z, mat) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.castShadow = true; m.receiveShadow = true;
+    m.userData._skipOutline = true;
+    door.add(m);
+  };
+  // Encadrement : 2 montants + linteau (boîtes sombres)
+  addPart(new THREE.BoxGeometry(JAMB, DH + JAMB, DDEPTH), -(DW / 2 + JAMB / 2), (DH + JAMB) / 2, 0, frameMat);
+  addPart(new THREE.BoxGeometry(JAMB, DH + JAMB, DDEPTH),  (DW / 2 + JAMB / 2), (DH + JAMB) / 2, 0, frameMat);
+  addPart(new THREE.BoxGeometry(DW + JAMB * 2, JAMB, DDEPTH), 0, DH + JAMB / 2, 0, frameMat);
+
+  // Le néant derrière la porte : plan noir absolu (non éclairé)
+  const voidPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(DW, DH),
+    new THREE.MeshBasicMaterial({ color: 0x01020a }),
+  );
+  voidPlane.position.set(0, DH / 2, -0.05);
+  voidPlane.userData._skipOutline = true;
+  door.add(voidPlane);
+
+  // Battant entrebâillé (charnière côté gauche, crème institutionnel) + poignée
+  const hinge = new THREE.Group();
+  hinge.position.set(-DW / 2, 0, 0.04);
+  hinge.rotation.y = 0.85;                        // entrouvert ~50°
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0xc9bd98, roughness: 0.7, metalness: 0.0 });
+  const leaf = new THREE.Mesh(new THREE.BoxGeometry(DW, DH - 0.05, 0.05), leafMat);
+  leaf.position.set(DW / 2, DH / 2, 0);
+  leaf.castShadow = true; leaf.userData._skipOutline = true;
+  hinge.add(leaf);
+  const knob = new THREE.Mesh(
+    new THREE.SphereGeometry(0.05, 12, 12),
+    new THREE.MeshStandardMaterial({ color: 0x26262a, roughness: 0.35, metalness: 0.7 }),
+  );
+  knob.position.set(DW - 0.13, DH / 2, 0.05);
+  knob.userData._skipOutline = true;
+  hinge.add(knob);
+  door.add(hinge);
+
+  levelGroup.add(door);
+
+  // Lueur cyan qui fuit de l'entrebâillement → l'au-delà, repérable de loin
+  const doorLight = new THREE.PointLight(0x7fd2ff, 3.8, 9, 2);
+  doorLight.position.set(fp.x, 1.5, fp.z);
+  levelGroup.add(doorLight);
+  addGlow(fp.x, 1.25, fp.z, 0x8fd8ff, 0.6);       // halo cyan (bloom) → repérable de loin
 }
 
 // Vide le niveau courant (meshes + lumières + collisions) avant régénération.
@@ -455,9 +502,11 @@ function clearLevel() {
   for (let i = levelGroup.children.length - 1; i >= 0; i--) {
     const c = levelGroup.children[i];
     levelGroup.remove(c);
-    c.geometry?.dispose?.();
-    const mats = Array.isArray(c.material) ? c.material : (c.material ? [c.material] : []);
-    for (const m of mats) { m.map?.dispose?.(); m.emissiveMap?.dispose?.(); m.dispose?.(); }
+    c.traverse((o) => {                            // récursif : couvre les Groups (porte)
+      o.geometry?.dispose?.();
+      const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      for (const m of mats) { m.map?.dispose?.(); m.emissiveMap?.dispose?.(); m.dispose?.(); }
+    });
   }
   for (const s of glowSprites) scene.remove(s);
   glowSprites.length = 0;

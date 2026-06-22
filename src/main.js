@@ -281,7 +281,7 @@ document.getElementById('cta-retry')?.addEventListener('click', () => {
   resetRun();
   controls.lock();
 });
-// Interaction E : passer la faille de sortie (descendre de niveau).
+// Interaction E : franchir la porte de descente (niveau suivant).
 window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyE' && game.state === State.PLAY && nearExit) descend();
 });
@@ -453,7 +453,7 @@ function updateSanity(dt) {
 }
 
 // =============================================================================
-//  DESCENTE — passer la faille → niveau suivant (régénéré, plus dur). Permadeath.
+//  DESCENTE — franchir la porte → niveau suivant (régénéré, plus dur). Permadeath.
 // =============================================================================
 let nearExit = false;
 function descend() {
@@ -612,12 +612,12 @@ function loop() {
     setCamBattery(game.camBattery);
     if (IS_BACKROOMS) {
       updateSanity(dt);
-      // Faille de sortie : prompt quand on est assez proche.
+      // Porte de descente : prompt quand on est assez proche.
       const ep = getExitPos();
       nearExit = !!(ep && camera.position.distanceTo(ep) < 1.9);
       const pr = document.getElementById('prompt');
       if (pr) {
-        if (nearExit) { pr.textContent = '[E] passer à travers la faille'; pr.classList.remove('hidden'); }
+        if (nearExit) { pr.textContent = '[E] franchir la porte'; pr.classList.remove('hidden'); }
         else pr.classList.add('hidden');
       }
     }
