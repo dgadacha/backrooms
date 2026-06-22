@@ -425,10 +425,11 @@ function buildBackrooms() {
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
   })();
-  const beamMat = new THREE.SpriteMaterial({
-    map: beamTex, color: 0xffe6a8, transparent: true, opacity: 0.6,
-    blending: THREE.AdditiveBlending, depthWrite: false,
+  const beamMat = new THREE.MeshBasicMaterial({
+    map: beamTex, color: 0xffe6a8, transparent: true, opacity: 0.55,
+    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
   });
+  const beamGeo = new THREE.PlaneGeometry(1.7, GR_H);
 
   for (let col = 1; col < BR_COLS; col += 3) {
     for (let row = 1; row < BR_ROWS; row += 3) {
@@ -444,12 +445,18 @@ function buildBackrooms() {
       scene.add(l);
       zoneNeons.push(l);
       addGlow(p.x, CH - 0.18, p.z, 0xfff4c2, dramatic ? 0.9 : 1.3);
-      // faisceau lumineux doux (sprite billboard) sous le néon
-      const gr = new THREE.Sprite(beamMat);
-      gr.scale.set(1.7, GR_H, 1);
-      gr.position.set(p.x, 0.5 + GR_H / 2, p.z);
-      gr.userData._skipOutline = true;
-      scene.add(gr);
+      // faisceau lumineux : 2 quads croisés VERTICAUX (pas de billboard → reste
+      // droit quel que soit l'angle de vue). Soft via la texture beam additive.
+      const beamY = 0.5 + GR_H / 2;
+      const q1 = new THREE.Mesh(beamGeo, beamMat);
+      q1.position.set(p.x, beamY, p.z);
+      q1.userData._skipOutline = true;
+      scene.add(q1);
+      const q2 = new THREE.Mesh(beamGeo, beamMat);
+      q2.position.set(p.x, beamY, p.z);
+      q2.rotation.y = Math.PI / 2;
+      q2.userData._skipOutline = true;
+      scene.add(q2);
     }
   }
 
