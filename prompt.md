@@ -93,10 +93,17 @@ Isolated patch of dark mold and water damage stain, irregular organic shape, bro
 ```
 *(Pas de `--tile` ici : c'est un décalque ponctuel, fond transparent.)*
 
-### 5.3 — Néon plafond (luminaire, pour habiller les tubes) → `light_fixture.png`
+### 5.3 — Luminaire plafond : PANNEAU CARRÉ → `light_fixture.png`
+Un seul panneau fluo **carré** qui remplit le cadre **bord à bord** (il occupe
+une dalle de la grille du plafond). **Pas de `--tile`** (carte unique sur un quad,
+pas une texture répétée).
 ```
-Seamless tileable texture of a long fluorescent ceiling light fixture, white plastic diffuser panel, slightly yellowed, dust inside, flat bottom-up view, even diffuse lighting, no harsh highlights, photorealistic PBR albedo, high detail --tile --ar 1:1 --style raw --v 6.1
+A single square fluorescent ceiling light panel, viewed straight from below, flat orthographic, a frosted prismatic diffuser filling the entire square frame edge to edge, uniform even glow, no vignette, slightly yellowed and dusty, two faint fluorescent tubes visible through the diffuser, thin dark metal frame at the very edges, photorealistic, high detail --ar 1:1 --style raw --v 6.1
 ```
+> Variante **panneau LED pur** (juste une dalle lumineuse uniforme) : retire
+> « two faint fluorescent tubes visible through the diffuser ».
+> Le code charge déjà `light_fixture.png` en `map` + `emissiveMap` sur chaque
+> dalle-luminaire (loadTex repeat 1) → rien à changer, dépose et recharge.
 
 ---
 

@@ -1,0 +1,11 @@
+1. Ombres de contact — SSAO/AO ⭐ le #1 manque
+Sans occlusion ambiante, tout a l'air légèrement « posé »/flottant. L'AO ajoute des ombres douces dans les coins, aux jonctions mur↔sol↔plafond, sous les cloisons → ça ancre toute la scène. Énorme gain de crédibilité pour un seul post-process (SSAO/SAO, addons Three.js r154). Meilleur ratio impact/effort.
+
+2. Reflets spéculaires — envMap / IBL léger
+Là tes surfaces sont 100 % mates (elles ne réfléchissent rien → effet « plastique »). Un environment map même sombre/neutre fait que sol, plafond et néons captent un léger reflet spéculaire = surfaces vivantes. Effort faible (PMREM + RoomEnvironment).
+
+3. God rays / brume volumétrique
+Des faisceaux de lumière qui tombent des néons dans la brume = LA signature liminale cinématique. Très Backrooms. Effort modéré (post-process).
+
+4. Vraies normal + roughness maps (sol/murs/plafond)
+Aujourd'hui c'est un relief auto léger. De vraies normal maps (l'Option B de prompt.md — tes albedos passés dans NormalMap-Online) → micro-relief qui réagit à la lampe torche = surfaces réalistes. Le code les charge déjà auto, c'est surtout côté toi.
