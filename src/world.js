@@ -453,21 +453,8 @@ function buildBackrooms() {
     }
   }
 
-  // --- taches de moisissure / eau au sol (decal_mold.png, fond transparent) ---
-  const moldMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, depthWrite: false });
-  loadTex('decal_mold', 1, THREE.SRGBColorSpace, (t) => { moldMat.map = t; moldMat.needsUpdate = true; });
-  for (let i = 0; i < 16; i++) {
-    const dx = (Math.random() * 2 - 1) * (BR_HALFX - 2);
-    const dz = (Math.random() * 2 - 1) * (BR_HALFZ - 2);
-    if (Math.abs(dx) < 3.5 && Math.abs(dz) < 3.5) continue;   // dégage le spawn
-    const s = 1.4 + Math.random() * 2.6;
-    const d = new THREE.Mesh(new THREE.PlaneGeometry(s, s), moldMat);
-    d.rotation.x = -Math.PI / 2;             // face vers le haut (au sol)
-    d.rotation.z = Math.random() * Math.PI * 2;
-    d.position.set(dx, 0.02, dz);
-    d.userData._skipOutline = true;
-    scene.add(d);
-  }
+  // (taches de moisissure au sol retirées — ne rendaient pas bien.
+  //  decal_mold.png reste dispo dans public/textures/ si on veut réessayer.)
 }
 buildBackrooms();
 
