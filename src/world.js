@@ -435,16 +435,30 @@ function buildBackrooms(opts = {}) {
   // Iconique Backrooms : une porte entrebâillée, du noir absolu derrière, et
   // une lueur cyan qui fuit par l'entrebâillement (l'au-delà) → repérable de loin.
   // La franchir (E à proximité) = descendre d'un niveau.
-  let fc, fr;
-  do { fc = Math.floor(Math.random() * BR_COLS); fr = Math.floor(Math.random() * BR_ROWS); }
-  while (safe(fc, fr));                           // jamais sur le spawn
-  const fp = cellCenter(fc, fr);
-  exitPos.set(fp.x, EYE, fp.z);
+  // Côté + position aléatoires SUR le mur d'enceinte (jamais flottante au milieu).
+  // Encastrée dans la paroi, s'ouvre vers l'intérieur ; le néant noir masque le mur.
+  const inset = 0.32;                              // recul depuis l'axe du mur
+  const side = Math.floor(Math.random() * 4);      // 0=N 1=S 2=E 3=O
+  let doorX, doorZ, doorRot;
+  if (side === 0) {                                // mur nord (z=-BR_HALFZ) → ouvre vers +z
+    doorX = cellCenter(1 + Math.floor(Math.random() * (BR_COLS - 2)), 0).x;
+    doorZ = -BR_HALFZ + inset; doorRot = 0;
+  } else if (side === 1) {                         // mur sud → vers -z
+    doorX = cellCenter(1 + Math.floor(Math.random() * (BR_COLS - 2)), 0).x;
+    doorZ = BR_HALFZ - inset; doorRot = Math.PI;
+  } else if (side === 2) {                         // mur est (x=+BR_HALFX) → vers -x
+    doorX = BR_HALFX - inset;
+    doorZ = cellCenter(0, 1 + Math.floor(Math.random() * (BR_ROWS - 2))).z; doorRot = -Math.PI / 2;
+  } else {                                         // mur ouest → vers +x
+    doorX = -BR_HALFX + inset;
+    doorZ = cellCenter(0, 1 + Math.floor(Math.random() * (BR_ROWS - 2))).z; doorRot = Math.PI / 2;
+  }
+  exitPos.set(doorX, EYE, doorZ);
   hasExit = true;
 
   const door = new THREE.Group();
-  door.position.set(fp.x, 0, fp.z);
-  door.rotation.y = Math.floor(Math.random() * 4) * (Math.PI / 2);   // alignée sur la grille
+  door.position.set(doorX, 0, doorZ);
+  door.rotation.y = doorRot;
 
   const DW = 1.0, DH = 2.15, JAMB = 0.11, DDEPTH = 0.16;
   // Cadre bois usé : contraste avec le néant noir ET le mur jaune → lit comme une porte
@@ -492,9 +506,9 @@ function buildBackrooms(opts = {}) {
 
   // Lueur cyan qui fuit de l'entrebâillement → l'au-delà, repérable de loin
   const doorLight = new THREE.PointLight(0x7fd2ff, 3.8, 9, 2);
-  doorLight.position.set(fp.x, 1.5, fp.z);
+  doorLight.position.set(doorX, 1.5, doorZ);
   levelGroup.add(doorLight);
-  addGlow(fp.x, 1.25, fp.z, 0x8fd8ff, 0.6);       // halo cyan (bloom) → repérable de loin
+  addGlow(doorX, 1.25, doorZ, 0x8fd8ff, 0.6);     // halo cyan (bloom) → repérable de loin
 }
 
 // Vide le niveau courant (meshes + lumières + collisions) avant régénération.
