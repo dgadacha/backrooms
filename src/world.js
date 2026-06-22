@@ -348,8 +348,18 @@ function buildBackrooms() {
 
   // --- néons plafond : tubes émissifs (certains grillés) + PointLight inégales,
   //     dont une partie grésille violemment, et des cellules carrément sombres ---
-  const neonMat = new THREE.MeshBasicMaterial({ color: 0xfff4c2 });               // allumé
-  const deadMat = new THREE.MeshStandardMaterial({ color: 0x2b2820, roughness: 0.9 }); // tube grillé
+  // Panneaux fluo texturés (light_fixture.png), certains grillés. L'éclairage
+  // réel + le grésillement viennent des PointLight ci-dessous.
+  const fixtureLit = new THREE.MeshStandardMaterial({
+    color: 0xffffff, emissive: 0xfff0d2, emissiveIntensity: 1.1, roughness: 0.5, metalness: 0,
+  });
+  const fixtureDead = new THREE.MeshStandardMaterial({ color: 0x4a4636, roughness: 0.85, metalness: 0 });
+  loadTex('light_fixture', 1, THREE.SRGBColorSpace, (t) => {
+    fixtureLit.map = t; fixtureLit.emissiveMap = t; fixtureLit.needsUpdate = true;
+    const t2 = new THREE.Texture(t.image);
+    t2.colorSpace = THREE.SRGBColorSpace; t2.needsUpdate = true;
+    fixtureDead.map = t2; fixtureDead.needsUpdate = true;
+  });
   const cellCenter = (c, r) => ({
     x: -BR_HALFX + (c + 0.5) * BR_CELL,
     z: -BR_HALFZ + (r + 0.5) * BR_CELL,
@@ -357,11 +367,12 @@ function buildBackrooms() {
   for (let col = 0; col < BR_COLS; col++) {
     for (let row = 0; row < BR_ROWS; row++) {
       const p = cellCenter(col, row);
-      const dead = Math.random() < 0.22;    // ~1 tube sur 5 grillé
-      const tube = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.07, 0.18), dead ? deadMat : neonMat);
-      tube.position.set(p.x, CH - 0.07, p.z);
-      tube.userData._skipOutline = true;
-      scene.add(tube);
+      const dead = Math.random() < 0.22;    // ~1 panneau sur 5 grillé
+      const panel = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.3), dead ? fixtureDead : fixtureLit);
+      panel.rotation.x = Math.PI / 2;        // face vers le bas
+      panel.position.set(p.x, CH - 0.02, p.z);
+      panel.userData._skipOutline = true;
+      scene.add(panel);
     }
   }
   for (let col = 1; col < BR_COLS; col += 3) {
@@ -379,6 +390,22 @@ function buildBackrooms() {
       zoneNeons.push(l);
       addGlow(p.x, CH - 0.18, p.z, 0xfff4c2, dramatic ? 0.9 : 1.3);
     }
+  }
+
+  // --- taches de moisissure / eau au sol (decal_mold.png, fond transparent) ---
+  const moldMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.9, depthWrite: false });
+  loadTex('decal_mold', 1, THREE.SRGBColorSpace, (t) => { moldMat.map = t; moldMat.needsUpdate = true; });
+  for (let i = 0; i < 16; i++) {
+    const dx = (Math.random() * 2 - 1) * (BR_HALFX - 2);
+    const dz = (Math.random() * 2 - 1) * (BR_HALFZ - 2);
+    if (Math.abs(dx) < 3.5 && Math.abs(dz) < 3.5) continue;   // dégage le spawn
+    const s = 1.4 + Math.random() * 2.6;
+    const d = new THREE.Mesh(new THREE.PlaneGeometry(s, s), moldMat);
+    d.rotation.x = -Math.PI / 2;             // face vers le haut (au sol)
+    d.rotation.z = Math.random() * Math.PI * 2;
+    d.position.set(dx, 0.02, dz);
+    d.userData._skipOutline = true;
+    scene.add(d);
   }
 }
 buildBackrooms();
