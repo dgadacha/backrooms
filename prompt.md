@@ -72,8 +72,9 @@ Seamless tileable texture of old faded yellow wallpaper, vintage office wall cov
 
 ### 4.3 — Plafond : dalles acoustiques → `ceiling_tile.png`
 ```
-Seamless tileable texture of suspended acoustic drop-ceiling tiles, white panels yellowed and water-stained with age, fine fissured perforated surface, faint metal T-grid lines between panels, flat bottom-up orthographic view, even diffuse lighting, no shadows, no highlights, photorealistic PBR albedo, high detail --tile --ar 1:1 --style raw --v 6.1
+Seamless tileable texture of a suspended acoustic drop ceiling, a perfectly regular and even grid of identical square tiles, uniform grid with equal spacing on both axes, straight thin grid lines, all tiles exactly the same size and perfectly aligned, white acoustic panels slightly yellowed and water-stained with age, fine speckled surface, flat top-down orthographic view, no perspective, even diffuse lighting, no shadows, photorealistic PBR albedo, high detail --tile --ar 1:1 --style raw --v 6.1
 ```
+> ⚠️ **Grille régulière obligatoire.** La 1re version avait des colonnes régulières mais des **lignes irrégulières** → les luminaires s'alignaient sur un seul axe. Vérifie que les dalles sont **équidistantes dans les deux sens** (idéalement un **3×3 carré** pour matcher la grille de luminaires du code). Si Midjourney n'y arrive pas, le plafond procédural (déjà en jeu, parfaitement aligné) reste le fallback. Pour rebrancher la photo : régénérer régulier → `applyPBR(ceilMat, 'ceiling_tile', BR_COLS)` dans `world.js::buildBackrooms`.
 
 ---
 
