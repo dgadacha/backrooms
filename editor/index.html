@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HORDE — Map Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-brand">
+        <span class="logo">◆</span>
+        <span class="title">HORDE Editor</span>
+      </div>
+
+      <div class="mode-group" role="group" aria-label="Mode transform">
+        <button class="mode-btn active" data-mode="translate" title="Déplacer (G)">
+          <span class="icon">⟷</span> Déplacer
+        </button>
+        <button class="mode-btn" data-mode="rotate" title="Rotation (R)">
+          <span class="icon">↻</span> Rotation
+        </button>
+        <button class="mode-btn" data-mode="scale" title="Échelle (S)">
+          <span class="icon">⤧</span> Échelle
+        </button>
+      </div>
+
+      <div class="snap-group" role="group" aria-label="Snap grille">
+        <span class="snap-label">Snap</span>
+        <button class="snap-btn active" data-snap="0" title="Pas de snap">Off</button>
+        <button class="snap-btn" data-snap="0.5" title="Snap 0.5 m">0.5 m</button>
+        <button class="snap-btn" data-snap="1" title="Snap 1 m">1 m</button>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn" id="btn-undo" title="Annuler (Ctrl+Z)" disabled>↶ Annuler</button>
+        <button class="btn" id="btn-redo" title="Rétablir (Ctrl+Y)" disabled>↷ Rétablir</button>
+        <span class="separator"></span>
+        <button class="btn" id="btn-top-down" title="Vue de dessus (1)">Vue dessus</button>
+        <button class="btn" id="btn-perspective" title="Vue perspective (2)">Perspective</button>
+        <span class="separator"></span>
+        <button class="btn" id="btn-new" title="Démarrer une carte vierge">+ Nouvelle</button>
+        <button class="btn" id="btn-depot" title="Charger la carte du dépôt par défaut">⌂ Dépôt</button>
+        <button class="btn" id="btn-load" title="Importer un fichier JSON">↑ Charger</button>
+        <input type="file" id="file-load" accept=".json" hidden />
+        <button class="btn btn-primary" id="btn-export">↓ Exporter JSON</button>
+        <button class="btn btn-test" id="btn-test" title="Tester en jeu (T)">▶ Tester</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <!-- SIDEBAR GAUCHE : Palette d'ajout + hiérarchie -->
+      <aside class="sidebar-left">
+        <div class="panel">
+          <div class="panel-header">Ajouter un prop</div>
+          <div class="panel-body" id="palette"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <span>Scène</span>
+            <span class="badge" id="prop-count">0</span>
+          </div>
+          <div class="panel-body" id="hierarchy"></div>
+        </div>
+      </aside>
+
+      <!-- CANVAS CENTRAL -->
+      <div class="canvas-container">
+        <canvas id="editor-canvas"></canvas>
+        <div class="canvas-overlay">
+          <div class="canvas-info" id="canvas-info">
+            <span><kbd>Clic gauche</kbd> sélectionner</span>
+            <span><kbd>Clic droit + drag</kbd> orbiter</span>
+            <span><kbd>G/R/S</kbd> mode</span>
+            <span><kbd>Suppr</kbd> supprimer</span>
+            <span><kbd>D</kbd> dupliquer</span>
+            <span><kbd>Ctrl+Z</kbd> annuler</span>
+            <span><kbd>T</kbd> tester</span>
+          </div>
+          <div class="canvas-zoom">
+            <span class="zoom-icon" id="zoom-out" title="Dézoomer">−</span>
+            <input type="range" id="cam-zoom" min="5" max="100" step="0.5" value="60" />
+            <span class="zoom-icon" id="zoom-in" title="Zoomer">+</span>
+            <span class="zoom-value mono" id="cam-zoom-val">60m</span>
+          </div>
+          <div class="canvas-status" id="canvas-status">Chargement des assets…</div>
+        </div>
+        <div class="flash" id="flash"></div>
+      </div>
+
+      <!-- SIDEBAR DROITE : Inspecteur -->
+      <aside class="sidebar-right">
+        <div class="panel">
+          <div class="panel-header">Inspecteur</div>
+          <div class="panel-body">
+            <div class="empty" id="inspector-empty">
+              <div class="empty-icon">⊕</div>
+              <div>Aucune sélection</div>
+              <small>Clique un prop dans la vue 3D</small>
+            </div>
+
+            <div class="inspector" id="inspector" hidden>
+              <div class="prop-header">
+                <div class="prop-type" id="prop-type">—</div>
+                <div class="prop-id" id="prop-id">—</div>
+              </div>
+
+              <div class="section-title">Transform</div>
+
+              <div class="field-row">
+                <label class="field-label">Position X</label>
+                <input type="number" id="pos-x" step="0.1" class="field-input" />
+              </div>
+              <div class="field-row">
+                <label class="field-label">Position Z</label>
+                <input type="number" id="pos-z" step="0.1" class="field-input" />
+              </div>
+              <div class="field-row">
+                <label class="field-label">Position Y</label>
+                <input type="number" id="pos-y" step="0.1" class="field-input" />
+              </div>
+
+              <div class="field-slider">
+                <div class="slider-label">
+                  <span>Rotation Y</span>
+                  <span class="slider-value mono" id="rot-y-val">0°</span>
+                </div>
+                <input type="range" id="rot-y" min="-180" max="180" step="1" value="0" />
+              </div>
+
+              <div class="field-slider">
+                <div class="slider-label">
+                  <span>Échelle</span>
+                  <span class="slider-value mono" id="scale-val">1.00×</span>
+                </div>
+                <input type="range" id="scale" min="0.1" max="5" step="0.05" value="1" />
+              </div>
+
+              <!-- Section spécifique au type "Mur" — affichée dynamiquement -->
+              <div id="wall-section" hidden>
+                <div class="section-title">Dimensions du mur</div>
+                <div class="field-slider">
+                  <div class="slider-label">
+                    <span>Largeur</span>
+                    <span class="slider-value mono" id="wall-w-val">4.00m</span>
+                  </div>
+                  <input type="range" id="wall-w" min="0.5" max="20" step="0.1" value="4" />
+                </div>
+                <div class="field-slider">
+                  <div class="slider-label">
+                    <span>Hauteur</span>
+                    <span class="slider-value mono" id="wall-h-val">4.50m</span>
+                  </div>
+                  <input type="range" id="wall-h" min="0.5" max="10" step="0.1" value="4.5" />
+                </div>
+                <div class="field-slider">
+                  <div class="slider-label">
+                    <span>Épaisseur</span>
+                    <span class="slider-value mono" id="wall-d-val">0.40m</span>
+                  </div>
+                  <input type="range" id="wall-d" min="0.1" max="2" step="0.05" value="0.4" />
+                </div>
+                <div class="field-row" style="margin-top: 6px;">
+                  <label class="field-label">Texture</label>
+                  <select id="wall-texture" class="field-input"></select>
+                </div>
+              </div>
+
+              <div class="actions-row">
+                <button class="btn btn-block" id="btn-duplicate">⎘ Dupliquer</button>
+                <button class="btn btn-block btn-danger" id="btn-delete">✕ Supprimer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">Carte</div>
+          <div class="panel-body">
+            <div class="field-row">
+              <label class="field-label">Nom</label>
+              <input type="text" id="map-name" class="field-input" placeholder="Ma carte" />
+            </div>
+            <div class="stats" id="map-stats">
+              <div class="stat"><span class="stat-label">Props</span><span class="stat-value mono" id="stat-props">0</span></div>
+              <div class="stat"><span class="stat-label">Sauvegardé</span><span class="stat-value mono" id="stat-saved">Non</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

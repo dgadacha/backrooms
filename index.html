@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Call of Zombies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Bangers&family=Russo+One&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div id="vignette"></div>
+
+  <!-- Écran de chargement initial — masque tout jusqu'au préchargement complet -->
+  <div id="loading-screen">
+    <div class="loading-inner">
+      <div class="loading-title">
+        <span class="t-dead">Call of</span> <span class="t-mall">Zombies</span>
+      </div>
+      <div class="loading-bar"><div id="loading-bar-fill"></div></div>
+      <div id="loading-text">0%</div>
+      <div id="loading-sub">0 / 0 assets</div>
+    </div>
+  </div>
+
+  <div id="hud" class="hidden">
+    <!-- top-left : compteur FPS (debug) -->
+    <div id="fps-counter">— FPS</div>
+
+    <!-- top-right : POINTS cumulés (style horde-survival classique) -->
+    <div id="hud-top-right">
+      <div id="points-label">POINTS</div>
+      <div id="points-total">500</div>
+      <div id="zombies-left-line">
+        <span class="ico ico-skull"></span>
+        <span id="zl-num">0</span>
+      </div>
+    </div>
+
+    <!-- round romain plein écran (animation slash au début de chaque vague) -->
+    <div id="round-flash"></div>
+
+    <!-- popups de score (+10 / +50 / +100 / +130) au centre -->
+    <div id="score-popups"></div>
+
+    <div id="event-banner"></div>
+    <div id="crosshair"></div>
+    <div id="hitmarker"></div>
+    <div id="toasts"></div>
+    <div id="prompt" class="hidden"></div>
+
+    <!-- bottom-left : vague en gros + barres HP/armure + perks -->
+    <div id="hud-bottom-left">
+      <div id="round-display">
+        <div id="round-label">VAGUE</div>
+        <div id="round-roman">1</div>
+      </div>
+      <!-- Barres HP + armure (style Fortnite/TF2) -->
+      <div id="health-bar">
+        <div id="health-fill"></div>
+        <span id="health-value">100</span>
+      </div>
+      <div id="armor-bar">
+        <div id="armor-fill"></div>
+        <span id="armor-value">0</span>
+      </div>
+      <!-- row de perks (cercles colorés) -->
+      <div id="perk-icons"></div>
+    </div>
+
+    <!-- éléments cachés conservés pour ne pas péter le code JS qui les update -->
+    <div class="hidden" aria-hidden="true">
+      <div id="player-name">SURVIVOR</div>
+      <span id="security-lv">1</span>
+    </div>
+
+    <!-- bottom-right : munitions + nom arme -->
+    <div id="hud-bottom-right">
+      <div id="ammo-line">
+        <span class="ico ico-ammo"></span>
+        <span id="ammo-mag">12</span><span class="ammo-sep">/</span><span id="ammo-reserve">∞</span>
+      </div>
+      <div id="weapon-name">PISTOL</div>
+      <div id="reloading"></div>
+      <!-- compteur perks (legacy, caché — remplacé par les cercles bottom-left) -->
+      <span id="perk-count" class="hidden"><span id="perk-num">0</span></span>
+    </div>
+  </div>
+
+  <div id="damage"></div>
+
+  <div id="menu" class="screen hidden pre-load">
+    <div class="grain-overlay"></div>
+    <div class="menu-inner">
+      <h1 class="title"><span class="t-dead">Call of</span> <span class="t-mall">Zombies</span></h1>
+      <p class="tagline">
+        Le dernier bus ne viendra pas.<br/>
+        <em>Ils ne s'arrêtent plus, eux.</em>
+      </p>
+
+      <div class="sh-menu-list">
+        <button id="cta-play" class="sh-menu-item sh-menu-primary">Commencer</button>
+        <button id="open-gallery" class="sh-menu-item">Galerie</button>
+        <button id="open-settings" class="sh-menu-item">Options</button>
+      </div>
+
+      <div class="controls">
+        <div class="controls-title">— Contrôles —</div>
+        <div class="controls-grid">
+          <div class="ctrl"><kbd>ZQSD</kbd><span>se déplacer</span></div>
+          <div class="ctrl"><kbd>Souris</kbd><span>viser</span></div>
+          <div class="ctrl"><kbd>Clic</kbd><span>tirer</span></div>
+          <div class="ctrl"><kbd>R</kbd><span>recharger</span></div>
+          <div class="ctrl"><kbd>Maj</kbd><span>sprinter</span></div>
+          <div class="ctrl"><kbd>1—4</kbd><span>arme</span></div>
+          <div class="ctrl"><kbd>E</kbd><span>acheter</span></div>
+          <div class="ctrl"><kbd>Échap</kbd><span>pause</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pause" class="screen hidden">
+    <div class="grain-overlay"></div>
+    <div class="menu-inner pause-inner">
+      <h1 class="title-mini"><em>En pause</em></h1>
+      <p class="pause-hint">Le silence n'est qu'apparent.</p>
+      <button id="cta-resume" class="sh-menu-item sh-menu-primary">Reprendre</button>
+    </div>
+  </div>
+
+  <div id="gallery" class="screen hidden gallery-screen">
+    <div class="gallery-sidebar">
+      <h2>MODÈLES</h2>
+      <div id="gallery-list"></div>
+      <button id="gallery-close" class="gallery-close-btn">← RETOUR AU MENU</button>
+    </div>
+    <div class="gallery-controls">
+      <div class="gallery-views">
+        <button data-view="front">AVANT</button>
+        <button data-view="side">PROFIL</button>
+        <button data-view="back">ARRIÈRE</button>
+        <button data-view="top">DESSUS</button>
+      </div>
+      <div class="gallery-scale-control">
+        <label for="gallery-scale">TAILLE</label>
+        <input type="range" id="gallery-scale" min="0.001" max="3" step="0.001" value="1">
+        <span id="gallery-scale-value">1.00×</span>
+      </div>
+      <div class="gallery-anim-control">
+        <label for="gallery-anim">ANIM</label>
+        <select id="gallery-anim"><option>—</option></select>
+      </div>
+      <button id="gallery-autorotate">↻ AUTO</button>
+    </div>
+  </div>
+
+  <div id="settings" class="screen hidden">
+    <div class="grain-overlay"></div>
+    <div class="settings-inner">
+      <button id="settings-close" class="btn-back" aria-label="Retour">← retour</button>
+      <h1 class="title-mini"><em>Options</em></h1>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Préréglage qualité</div>
+        <div id="settings-presets">
+          <button class="preset-card" data-preset="performance">
+            <div class="preset-name">Performance</div>
+          </button>
+          <button class="preset-card" data-preset="quality">
+            <div class="preset-name">Qualité</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Affichage</div>
+        <div class="settings-toggles">
+          <label class="toggle-row">
+            <span class="toggle-label">Afficher les FPS</span>
+            <input type="checkbox" id="toggle-fps" class="ios-toggle" />
+          </label>
+          <div class="toggle-row">
+            <span class="toggle-label">Limite FPS</span>
+            <div class="fps-cap-buttons">
+              <button class="fps-cap-btn" data-fps="30">30</button>
+              <button class="fps-cap-btn" data-fps="60">60</button>
+              <button class="fps-cap-btn" data-fps="0">illimité</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Démarrage</div>
+        <div class="settings-toggles">
+          <div class="toggle-row">
+            <span class="toggle-label">Vague de départ</span>
+            <div class="fps-cap-buttons">
+              <button class="start-wave-btn" data-wave="1">1</button>
+              <button class="start-wave-btn" data-wave="5">5</button>
+              <button class="start-wave-btn" data-wave="10">10</button>
+              <button class="start-wave-btn" data-wave="15">15</button>
+              <button class="start-wave-btn" data-wave="20">20</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Carte</div>
+        <div class="settings-toggles">
+          <div class="toggle-row">
+            <span class="toggle-label">Carte active <em class="toggle-hint" id="active-map-name">par défaut</em></span>
+            <div class="fps-cap-buttons">
+              <button id="btn-import-map" class="fps-cap-btn">↑ Importer (.json)</button>
+              <button id="btn-reset-map" class="fps-cap-btn">↺ Défaut</button>
+            </div>
+          </div>
+        </div>
+        <input type="file" id="file-import-map" accept=".json" hidden />
+      </div>
+
+    </div>
+  </div>
+
+  <div id="gameover" class="screen hidden">
+    <div class="grain-overlay"></div>
+    <div class="menu-inner pause-inner">
+      <h1 class="title-mini sh-dead"><em>Tu es mort.</em></h1>
+      <div id="go-stats"></div>
+      <button id="cta-retry" class="sh-menu-item sh-menu-primary">Recommencer</button>
+    </div>
+  </div>
+
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
