@@ -404,6 +404,32 @@ function buildBackrooms() {
       scene.add(panel);
     }
   }
+  // God rays : sprites "faisceau" doux (billboard face caméra, additif). Texture
+  // = cœur vertical lumineux, falloff horizontal doux + fade vers le bas. Le
+  // billboard évite l'aspect "cône solide" d'une géométrie.
+  const GR_H = CH - 0.5;
+  const beamTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const hg = g.createLinearGradient(0, 0, 128, 0);       // falloff horizontal doux
+    hg.addColorStop(0.0, 'rgba(255,255,255,0)');
+    hg.addColorStop(0.5, 'rgba(255,255,255,1)');
+    hg.addColorStop(1.0, 'rgba(255,255,255,0)');
+    g.fillStyle = hg; g.fillRect(0, 0, 128, 128);
+    g.globalCompositeOperation = 'destination-in';         // fade vertical haut→bas
+    const vg = g.createLinearGradient(0, 0, 0, 128);
+    vg.addColorStop(0.0, 'rgba(255,255,255,0.9)');
+    vg.addColorStop(1.0, 'rgba(255,255,255,0)');
+    g.fillStyle = vg; g.fillRect(0, 0, 128, 128);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const beamMat = new THREE.SpriteMaterial({
+    map: beamTex, color: 0xffe6a8, transparent: true, opacity: 0.6,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+
   for (let col = 1; col < BR_COLS; col += 3) {
     for (let row = 1; row < BR_ROWS; row += 3) {
       if (Math.random() < 0.22) continue;          // cellule sans lampe → zone noire
@@ -418,11 +444,17 @@ function buildBackrooms() {
       scene.add(l);
       zoneNeons.push(l);
       addGlow(p.x, CH - 0.18, p.z, 0xfff4c2, dramatic ? 0.9 : 1.3);
+      // faisceau lumineux doux (sprite billboard) sous le néon
+      const gr = new THREE.Sprite(beamMat);
+      gr.scale.set(1.7, GR_H, 1);
+      gr.position.set(p.x, 0.5 + GR_H / 2, p.z);
+      gr.userData._skipOutline = true;
+      scene.add(gr);
     }
   }
 
   // --- taches de moisissure / eau au sol (decal_mold.png, fond transparent) ---
-  const moldMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.9, depthWrite: false });
+  const moldMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, depthWrite: false });
   loadTex('decal_mold', 1, THREE.SRGBColorSpace, (t) => { moldMat.map = t; moldMat.needsUpdate = true; });
   for (let i = 0; i < 16; i++) {
     const dx = (Math.random() * 2 - 1) * (BR_HALFX - 2);
