@@ -16,6 +16,7 @@ import {
   updateWorld, buyStations, endBlackout,
   switchToZone, getZone, setActionHandlers,
   importMapJson, MAP_ACTIVE_KEY, MAP_LIST_KEY, ACTIVE_MAP, getLightLevelAt,
+  getExitPos, regenerateLevel,
 } from './world.js';
 // Fork BACKROOMS : coupe tout le gameplay horde (vagues, zombies, achats, perks)
 // quand la map active est le Niveau 0. Repasser ACTIVE_MAP (world.js) sur
@@ -280,6 +281,10 @@ document.getElementById('cta-retry')?.addEventListener('click', () => {
   resetRun();
   controls.lock();
 });
+// Interaction E : passer la faille de sortie (descendre de niveau).
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyE' && game.state === State.PLAY && nearExit) descend();
+});
 
 // =============================================================================
 //  GALERIE 3D — ouverture / fermeture / navigation
@@ -448,6 +453,20 @@ function updateSanity(dt) {
 }
 
 // =============================================================================
+//  DESCENTE — passer la faille → niveau suivant (régénéré, plus dur). Permadeath.
+// =============================================================================
+let nearExit = false;
+function descend() {
+  game.level++;
+  player.sanity = 100;       // soulagement mental à chaque descente
+  game.camBattery = 100;     // recharge (provisoire, jusqu'aux piles)
+  regenerateLevel(game.level);
+  const z = getZone();
+  camera.position.set(z.playerSpawn.x + z.baseX, z.playerSpawn.y + z.baseY, z.playerSpawn.z + z.baseZ);
+  banner(`NIVEAU ${game.level}`);
+}
+
+// =============================================================================
 //  HORREUR + PERK REGEN
 // =============================================================================
 let heartCd = 0;
@@ -591,7 +610,17 @@ function loop() {
     }
     setCamcorderVisible(game.cameraUp);
     setCamBattery(game.camBattery);
-    if (IS_BACKROOMS) updateSanity(dt);
+    if (IS_BACKROOMS) {
+      updateSanity(dt);
+      // Faille de sortie : prompt quand on est assez proche.
+      const ep = getExitPos();
+      nearExit = !!(ep && camera.position.distanceTo(ep) < 1.9);
+      const pr = document.getElementById('prompt');
+      if (pr) {
+        if (nearExit) { pr.textContent = '[E] passer à travers la faille'; pr.classList.remove('hidden'); }
+        else pr.classList.add('hidden');
+      }
+    }
     if (dead) gameOver();
   } else {
     updateLowHpVignette();

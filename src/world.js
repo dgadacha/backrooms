@@ -251,7 +251,17 @@ export function importMapJson(data, displayName) {
 //  BACKROOMS — NIVEAU 0 procédural (moquette jaune, papier peint, néons)
 //  Grille de cellules cloisonnées au hasard → labyrinthe ouvert désorientant.
 // =============================================================================
-function buildBackrooms() {
+// Conteneur du niveau courant — vidé/reconstruit à chaque descente.
+const levelGroup = new THREE.Group();
+scene.add(levelGroup);
+const exitPos = new THREE.Vector3();   // position de la faille (sortie no-clip)
+let hasExit = false;
+export function getExitPos() { return hasExit ? exitPos : null; }
+
+function buildBackrooms(opts = {}) {
+  const level = opts.level || 0;
+  const deadProb = Math.min(0.55, 0.22 + level * 0.09);   // + de panneaux grillés en profondeur
+  const skipProb = Math.min(0.50, 0.22 + level * 0.07);   // + de lampes éteintes (plus sombre)
   const FW = BR_COLS * BR_CELL;   // largeur/profondeur totales
   const FD = BR_ROWS * BR_CELL;
   const CH = BR_CEIL_H;
@@ -324,13 +334,13 @@ function buildBackrooms() {
   floor.userData._skipOutline = true;
   floor.receiveShadow = true;
   registerFloor(floor);
-  scene.add(floor);
+  levelGroup.add(floor);
 
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(FW, FD), ceilMat);
   ceiling.rotation.x = Math.PI / 2;
   ceiling.position.y = CH;
   ceiling.userData._skipOutline = true;
-  scene.add(ceiling);
+  levelGroup.add(ceiling);
 
   // --- helper cloison (mesh + collision AABB) ---
   function wallSeg(cx, cz, w, d, mat = wallMat) {
@@ -338,7 +348,7 @@ function buildBackrooms() {
     m.position.set(cx, CH / 2, cz);
     m.receiveShadow = true;
     m.userData._skipOutline = true;
-    scene.add(m);
+    levelGroup.add(m);
     addObstacle(cx - w / 2, cx + w / 2, cz - d / 2, cz + d / 2);
   }
 
@@ -396,17 +406,17 @@ function buildBackrooms() {
   for (let col = 0; col < BR_COLS; col++) {
     for (let row = 0; row < BR_ROWS; row++) {
       const p = cellCenter(col, row);
-      const dead = Math.random() < 0.22;    // ~1 panneau sur 5 grillé
+      const dead = Math.random() < deadProb; // panneaux grillés (+ en profondeur)
       const panel = new THREE.Mesh(new THREE.PlaneGeometry(fixSize, fixSize), dead ? fixtureDead : fixtureLit);
       panel.rotation.x = Math.PI / 2;        // face vers le bas
       panel.position.set(p.x, CH - 0.02, p.z);
       panel.userData._skipOutline = true;
-      scene.add(panel);
+      levelGroup.add(panel);
     }
   }
   for (let col = 1; col < BR_COLS; col += 3) {
     for (let row = 1; row < BR_ROWS; row += 3) {
-      if (Math.random() < 0.22) continue;          // cellule sans lampe → zone noire
+      if (Math.random() < skipProb) continue;      // cellule sans lampe → zone noire
       const p = cellCenter(col, row);
       const dramatic = Math.random() < 0.35;       // 1/3 grésillent à la SH3
       const base = dramatic ? 1.0 : (0.45 + Math.random() * 0.35);
@@ -415,16 +425,57 @@ function buildBackrooms() {
       l.userData = dramatic
         ? { base, flicker: true, dramaticFlicker: true, phase: Math.random() * 7, dramaticOff: 0, dramaticNext: Math.random() * 4 }
         : { base, flicker: true, phase: Math.random() * 7 };
-      scene.add(l);
+      levelGroup.add(l);
       zoneNeons.push(l);
       addGlow(p.x, CH - 0.18, p.z, 0xfff4c2, dramatic ? 0.9 : 1.3);
     }
   }
 
-  // (taches de moisissure au sol retirées — ne rendaient pas bien.
-  //  decal_mold.png reste dispo dans public/textures/ si on veut réessayer.)
+  // --- FAILLE / sortie no-clip : à une cellule aléatoire hors du spawn ---
+  let fc, fr;
+  do { fc = Math.floor(Math.random() * BR_COLS); fr = Math.floor(Math.random() * BR_ROWS); }
+  while (safe(fc, fr));                           // jamais sur le spawn
+  const fp = cellCenter(fc, fr);
+  exitPos.set(fp.x, EYE, fp.z);
+  hasExit = true;
+  // Rift "void" : croix de plans très sombres (tranche dans la réalité) + halo
+  // cyan (PointLight) qui éclaire les alentours en bleu → repérable de loin.
+  const riftMat = new THREE.MeshBasicMaterial({ color: 0x06080e, side: THREE.DoubleSide });
+  const riftGeo = new THREE.PlaneGeometry(0.85, 2.6);
+  const r1 = new THREE.Mesh(riftGeo, riftMat);
+  r1.position.set(fp.x, 1.3, fp.z); r1.userData._skipOutline = true; levelGroup.add(r1);
+  const r2 = new THREE.Mesh(riftGeo, riftMat);
+  r2.position.set(fp.x, 1.3, fp.z); r2.rotation.y = Math.PI / 2; r2.userData._skipOutline = true; levelGroup.add(r2);
+  const riftLight = new THREE.PointLight(0x7fd2ff, 2.6, 11, 2);
+  riftLight.position.set(fp.x, 1.4, fp.z); levelGroup.add(riftLight);
 }
-buildBackrooms();
+
+// Vide le niveau courant (meshes + lumières + collisions) avant régénération.
+function clearLevel() {
+  for (let i = levelGroup.children.length - 1; i >= 0; i--) {
+    const c = levelGroup.children[i];
+    levelGroup.remove(c);
+    c.geometry?.dispose?.();
+    const mats = Array.isArray(c.material) ? c.material : (c.material ? [c.material] : []);
+    for (const m of mats) { m.map?.dispose?.(); m.emissiveMap?.dispose?.(); m.dispose?.(); }
+  }
+  for (const s of glowSprites) scene.remove(s);
+  glowSprites.length = 0;
+  obstacles.length = 0;
+  floorMeshes.length = 0;
+  zoneNeons.length = 0;
+  _lastObstaclesLen = 0;
+  hasExit = false;
+}
+
+// Descente : régénère un labyrinthe plus dur (appelé par main.js).
+export function regenerateLevel(level = 0) {
+  clearLevel();
+  buildBackrooms({ level });
+  rebuildObstacles();
+}
+
+buildBackrooms({ level: 0 });
 
 // =============================================================================
 //  ZONE (stubs mono-map) + spawns — conservés pour main.js / enemies.js
