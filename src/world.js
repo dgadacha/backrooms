@@ -276,11 +276,31 @@ function buildBackrooms() {
       g.beginPath(); g.arc(Math.random() * s, Math.random() * s, 4 + Math.random() * 9, 0, 7); g.fill();
     }
   }, 1, 64);
+  // Plafond : grille procédurale RÉGULIÈRE (3×3 dalles carrées). ceiling_tile.png
+  // a une grille irrégulière en V (lignes ~160/230/210 px) → désalignait les
+  // luminaires sur un axe. Le procédural garantit une grille parfaitement
+  // alignée sur les deux axes. (Régénère ceiling_tile bien régulier si tu veux
+  // le revenir au photo.)
   const ceilTex = makeTex((g, s) => {
-    g.fillStyle = '#cabd84'; g.fillRect(0, 0, s, s);          // dalles de plafond
-    g.strokeStyle = 'rgba(70,60,35,0.55)'; g.lineWidth = 3;
-    g.strokeRect(2, 2, s - 4, s - 4);
-  }, BR_COLS, 64);
+    const n = 3, cell = s / n;
+    g.fillStyle = '#c8bd8e'; g.fillRect(0, 0, s, s);            // dalle beige
+    for (let i = 0; i < 4200; i++) {                            // grain acoustique
+      const v = (Math.random() * 36 - 18) | 0;
+      g.fillStyle = `rgba(${150 + v},${140 + v},${104 + v},0.22)`;
+      g.fillRect(Math.random() * s, Math.random() * s, 1.5, 1.5);
+    }
+    for (let i = 0; i < 5; i++) {                               // taches d'humidité
+      g.fillStyle = 'rgba(120,104,68,0.10)';
+      g.beginPath(); g.arc(Math.random() * s, Math.random() * s, 6 + Math.random() * 16, 0, 7); g.fill();
+    }
+    const jw = Math.max(2, s * 0.016);                          // joints de grille nets
+    g.fillStyle = 'rgba(74,68,46,0.62)';
+    for (let k = 0; k <= n; k++) {
+      const p = k * cell;
+      g.fillRect(p - jw / 2, 0, jw, s);
+      g.fillRect(0, p - jw / 2, s, jw);
+    }
+  }, BR_COLS, 256);
 
   // Matériaux PBR (MeshStandard) : albedo procédural en fallback, remplacé par
   // tes PNG dès qu'ils sont dans public/textures/ (carpet_yellow / wallpaper_yellow
@@ -293,7 +313,8 @@ function buildBackrooms() {
   applyPBR(carpetMat,    'carpet_yellow',    BR_COLS);
   applyPBR(wallMat,      'wallpaper_yellow', 2);
   applyPBR(wallMatPerim, 'wallpaper_yellow', 12);
-  applyPBR(ceilMat,      'ceiling_tile',     BR_COLS);
+  // Plafond : on garde la grille procédurale régulière (pas de ceiling_tile.png,
+  // cf. plus bas) pour que les luminaires s'alignent sur les deux axes.
 
   // --- sol (raycast gravité) + plafond ---
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FD), carpetMat);
