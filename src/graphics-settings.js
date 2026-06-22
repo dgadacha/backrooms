@@ -178,15 +178,16 @@ function apply() {
     }
   }
 
-  // 5. Post-process (mode neutre — laisse le color management faire le job)
+  // 5. Post-process — étalonnage horreur found-footage : désaturé, vignette
+  //    dense, grain caméra, teinte jaune malsaine. (uTime anime grain ;
+  //    uAberration reste à sa valeur shader.)
   if (cartoonPass) {
-    const p = current.postIntensity;
-    // p = 1 : exposure 1.05, sat 1.10 (très léger pop, pas un filtre)
-    cartoonPass.uniforms.uExposure.value         = 1.0 + (1.05 - 1.0) * p;
-    cartoonPass.uniforms.uSaturationBoost.value  = 1.0 + (1.10 - 1.0) * p;
-    cartoonPass.uniforms.uVignetteStrength.value = 0.0;
-    cartoonPass.uniforms.uGrainIntensity.value   = 0.0;
-    cartoonPass.uniforms.uColorTint.value.set(1.0, 1.0, 1.0);
+    cartoonPass.uniforms.uExposure.value         = 1.0;
+    cartoonPass.uniforms.uSaturationBoost.value  = 0.82;
+    cartoonPass.uniforms.uVignetteStrength.value = 0.60;
+    cartoonPass.uniforms.uVignetteFalloff.value  = 1.7;
+    cartoonPass.uniforms.uGrainIntensity.value   = 0.085;
+    cartoonPass.uniforms.uColorTint.value.set(1.0, 0.99, 0.9);
   }
 
   // 6. Fog

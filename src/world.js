@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, applyLowPoly } from './renderer.js';
+import { scene, camera, MAX_ANISOTROPY } from './renderer.js';
 import { FOG_FAR, FOG_NEAR, FOG_COLOR, EYE } from './config.js';
 
 // =============================================================================
@@ -34,9 +34,9 @@ const BR_CEIL_H = 3.0;           // hauteur plafond (bas = oppressant)
 // =============================================================================
 //  LUMIÈRES + FOG — ambiance jaune plate (la peur vient du vide, pas du noir)
 // =============================================================================
-const ambient = new THREE.AmbientLight(0xfff0c0, 0.55);
+const ambient = new THREE.AmbientLight(0xffe8b0, 0.22);   // base sombre : la lumière vient des néons + lampe torche
 scene.add(ambient);
-const hemi = new THREE.HemisphereLight(0xffe9a0, 0x5a4e26, 0.50);
+const hemi = new THREE.HemisphereLight(0xffe9a0, 0x33301c, 0.18);
 scene.add(hemi);
 // Lune conservée (exportée pour le menu Graphismes) mais éteinte : éclairage
 // plat des Backrooms. mapSize/frustum prêts si on veut réactiver des ombres.
@@ -58,6 +58,23 @@ if (scene.fog) {
   scene.fog.far  = BR_FOG_FAR;
 }
 scene.background = new THREE.Color(BR_FOG_COLOR);
+
+// =============================================================================
+//  LAMPE TORCHE — SpotLight attachée caméra (appoint dans les zones sombres,
+//  projette de vraies ombres mouvantes sur les cloisons = ambiance)
+// =============================================================================
+const flashlight = new THREE.SpotLight(0xfff3d6, 2.4, 24, Math.PI / 6, 0.45, 1.2);
+flashlight.position.set(0.18, -0.12, 0.1);     // tenue main droite, léger décalage
+flashlight.castShadow = true;
+flashlight.shadow.mapSize.set(1024, 1024);
+flashlight.shadow.camera.near = 0.2;
+flashlight.shadow.camera.far  = 24;
+flashlight.shadow.bias = -0.0015;
+const flashTarget = new THREE.Object3D();
+flashTarget.position.set(0, 0, -10);
+camera.add(flashlight);
+camera.add(flashTarget);
+flashlight.target = flashTarget;
 
 // Defaults fog pour que le menu Graphismes puisse les restaurer
 export const fogDefaults = { near: BR_FOG_NEAR, far: BR_FOG_FAR };
@@ -121,6 +138,49 @@ function makeTex(draw, rep=1, size=64) {
   t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter;
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep);
   return t;
+}
+
+// Charge public/textures/<name>.png et l'applique sur un MeshStandardMaterial.
+// FALLBACK-SAFE : si le PNG est absent (404), le matériau garde sa texture
+// procédurale → le jeu marche avant même que les textures soient générées.
+// Voir prompt.md pour les prompts Midjourney + les noms de fichiers attendus.
+function loadTex(name, repeat, colorSpace, onReady) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const t = new THREE.Texture(img);
+    t.colorSpace = colorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(repeat, repeat);
+    t.magFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.anisotropy = MAX_ANISOTROPY;
+    t.needsUpdate = true;
+    onReady(t);
+  };
+  img.onerror = () => { /* garde le fallback procédural */ };
+  img.src = `public/textures/${name}.png`;
+}
+function applyPBR(mat, name, repeat) {
+  loadTex(name, repeat, THREE.SRGBColorSpace, (t) => {
+    mat.map = t;
+    // Option A (prompt.md) : relief léger dérivé de l'albedo (luminance).
+    const b = new THREE.Texture(t.image);
+    b.colorSpace = THREE.NoColorSpace;
+    b.wrapS = b.wrapT = THREE.RepeatWrapping;
+    b.repeat.set(repeat, repeat);
+    b.anisotropy = MAX_ANISOTROPY;
+    b.needsUpdate = true;
+    mat.bumpMap = b; mat.bumpScale = 0.04;
+    mat.needsUpdate = true;
+    // Option B : si tu fournis des maps PBR dédiées, elles priment sur l'auto.
+    loadTex(name + '_normal', repeat, THREE.NoColorSpace, (n) => {
+      mat.normalMap = n; mat.bumpMap = null; mat.needsUpdate = true;
+    });
+    loadTex(name + '_rough', repeat, THREE.NoColorSpace, (r) => {
+      mat.roughnessMap = r; mat.needsUpdate = true;
+    });
+  });
 }
 
 const zoneNeons = [];                 // lumières qui grésillent (animées par updateWorld)
@@ -222,9 +282,18 @@ function buildBackrooms() {
     g.strokeRect(2, 2, s - 4, s - 4);
   }, BR_COLS, 64);
 
-  const carpetMat = applyLowPoly(new THREE.MeshLambertMaterial({ map: carpetTex }));
-  const wallMat   = applyLowPoly(new THREE.MeshLambertMaterial({ map: wallTex }));
-  const ceilMat   = applyLowPoly(new THREE.MeshLambertMaterial({ map: ceilTex }));
+  // Matériaux PBR (MeshStandard) : albedo procédural en fallback, remplacé par
+  // tes PNG dès qu'ils sont dans public/textures/ (carpet_yellow / wallpaper_yellow
+  // / ceiling_tile — voir prompt.md). wallMatPerim = repeat dense pour les longs
+  // murs d'enceinte (sinon le motif s'étire).
+  const carpetMat    = new THREE.MeshStandardMaterial({ map: carpetTex, roughness: 0.96, metalness: 0 });
+  const wallMat      = new THREE.MeshStandardMaterial({ map: wallTex,   roughness: 0.92, metalness: 0 });
+  const wallMatPerim = new THREE.MeshStandardMaterial({ map: wallTex,   roughness: 0.92, metalness: 0 });
+  const ceilMat      = new THREE.MeshStandardMaterial({ map: ceilTex,   roughness: 0.95, metalness: 0 });
+  applyPBR(carpetMat,    'carpet_yellow',    BR_COLS);
+  applyPBR(wallMat,      'wallpaper_yellow', 2);
+  applyPBR(wallMatPerim, 'wallpaper_yellow', 12);
+  applyPBR(ceilMat,      'ceiling_tile',     BR_COLS);
 
   // --- sol (raycast gravité) + plafond ---
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FD), carpetMat);
@@ -241,8 +310,8 @@ function buildBackrooms() {
   scene.add(ceiling);
 
   // --- helper cloison (mesh + collision AABB) ---
-  function wallSeg(cx, cz, w, d) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, CH, d), wallMat);
+  function wallSeg(cx, cz, w, d, mat = wallMat) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, CH, d), mat);
     m.position.set(cx, CH / 2, cz);
     m.receiveShadow = true;
     m.userData._skipOutline = true;
@@ -250,11 +319,11 @@ function buildBackrooms() {
     addObstacle(cx - w / 2, cx + w / 2, cz - d / 2, cz + d / 2);
   }
 
-  // --- mur d'enceinte (4 côtés) ---
-  wallSeg(0, -BR_HALFZ, FW, WT);
-  wallSeg(0,  BR_HALFZ, FW, WT);
-  wallSeg(-BR_HALFX, 0, WT, FD);
-  wallSeg( BR_HALFX, 0, WT, FD);
+  // --- mur d'enceinte (4 côtés) — matériau à repeat dense ---
+  wallSeg(0, -BR_HALFZ, FW, WT, wallMatPerim);
+  wallSeg(0,  BR_HALFZ, FW, WT, wallMatPerim);
+  wallSeg(-BR_HALFX, 0, WT, FD, wallMatPerim);
+  wallSeg( BR_HALFX, 0, WT, FD, wallMatPerim);
 
   // --- cloisons internes : segments aléatoires sur les arêtes de la grille,
   //     en gardant un carré 3×3 dégagé autour du spawn central ---
@@ -277,9 +346,10 @@ function buildBackrooms() {
     }
   }
 
-  // --- néons plafond : tubes émissifs partout (gratuits) + quelques vraies
-  //     PointLight espacées qui grésillent (poussées dans zoneNeons) ---
-  const neonMat = new THREE.MeshBasicMaterial({ color: 0xfff4c2 });
+  // --- néons plafond : tubes émissifs (certains grillés) + PointLight inégales,
+  //     dont une partie grésille violemment, et des cellules carrément sombres ---
+  const neonMat = new THREE.MeshBasicMaterial({ color: 0xfff4c2 });               // allumé
+  const deadMat = new THREE.MeshStandardMaterial({ color: 0x2b2820, roughness: 0.9 }); // tube grillé
   const cellCenter = (c, r) => ({
     x: -BR_HALFX + (c + 0.5) * BR_CELL,
     z: -BR_HALFZ + (r + 0.5) * BR_CELL,
@@ -287,21 +357,27 @@ function buildBackrooms() {
   for (let col = 0; col < BR_COLS; col++) {
     for (let row = 0; row < BR_ROWS; row++) {
       const p = cellCenter(col, row);
-      const tube = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.07, 0.18), neonMat);
+      const dead = Math.random() < 0.22;    // ~1 tube sur 5 grillé
+      const tube = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.07, 0.18), dead ? deadMat : neonMat);
       tube.position.set(p.x, CH - 0.07, p.z);
       tube.userData._skipOutline = true;
       scene.add(tube);
     }
   }
-  for (let col = 1; col < BR_COLS; col += 4) {
-    for (let row = 1; row < BR_ROWS; row += 4) {
+  for (let col = 1; col < BR_COLS; col += 3) {
+    for (let row = 1; row < BR_ROWS; row += 3) {
+      if (Math.random() < 0.22) continue;          // cellule sans lampe → zone noire
       const p = cellCenter(col, row);
-      const l = new THREE.PointLight(0xffe9a8, 0.9, BR_CELL * 3.4, 1.7);
+      const dramatic = Math.random() < 0.35;       // 1/3 grésillent à la SH3
+      const base = dramatic ? 1.0 : (0.45 + Math.random() * 0.35);
+      const l = new THREE.PointLight(0xffe6a0, base, BR_CELL * 3.2, 1.8);
       l.position.set(p.x, CH - 0.25, p.z);
-      l.userData = { base: 0.9, flicker: true, phase: Math.random() * 7 };
+      l.userData = dramatic
+        ? { base, flicker: true, dramaticFlicker: true, phase: Math.random() * 7, dramaticOff: 0, dramaticNext: Math.random() * 4 }
+        : { base, flicker: true, phase: Math.random() * 7 };
       scene.add(l);
       zoneNeons.push(l);
-      addGlow(p.x, CH - 0.18, p.z, 0xfff4c2, 1.3);
+      addGlow(p.x, CH - 0.18, p.z, 0xfff4c2, dramatic ? 0.9 : 1.3);
     }
   }
 }
@@ -363,6 +439,23 @@ export function updateWorld(dt) {
   for (const n of zoneNeons) {
     const u = n.userData;
     if (!u.flicker) continue;
+    if (u.dramaticFlicker) {
+      // néon grillé : reste éteint X s, revient violemment, stroboscope au ON
+      u.dramaticNext -= dt;
+      if (u.dramaticOff > 0) {
+        u.dramaticOff -= dt;
+        n.intensity = u.base * 0.02;
+        if (u.dramaticOff <= 0) u.dramaticNext = 2 + Math.random() * 5;
+      } else if (u.dramaticNext <= 0) {
+        u.dramaticOff = 0.4 + Math.random() * 1.1;
+      } else {
+        u.phase += dt * (4 + Math.random() * 4);
+        const f = Math.sin(u.phase * 11) * Math.sin(u.phase * 17);
+        const burst = Math.random() < 0.08 ? 0.15 : (0.6 + 0.6 * f);
+        n.intensity = u.base * Math.max(0.1, burst);
+      }
+      continue;
+    }
     u.phase += dt * (3 + Math.random() * 2);
     const f = 0.85 + 0.15 * Math.sin(u.phase * 7) * Math.sin(u.phase * 13);
     n.intensity = u.base * (Math.random() < 0.001 ? 0.5 : f);
@@ -381,7 +474,7 @@ export function updateWorld(dt) {
 // Stubs blackout conservés pour compat enemies.js / main.js
 export function startBlackout(_dur = 14) { /* no-op MVP */ }
 export function endBlackout() {
-  ambient.intensity = 0.55;
+  ambient.intensity = 0.22;
   if (scene.fog) scene.fog.far = BR_FOG_FAR;
   blackoutT = 0;
 }

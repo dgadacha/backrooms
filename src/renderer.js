@@ -4,6 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { FOG_NEAR, FOG_FAR, FOG_COLOR, SPAWN } from './config.js';
 import { PS1_MODE, PS2_MODE, FLAT_SHADING } from './graphics-settings.js';
 
@@ -143,6 +144,7 @@ const CartoonPostShader = {
     uColorTint:       { value: new THREE.Vector3(1.0, 1.0, 1.0) },
     uGrainIntensity:  { value: 0.0 },
     uColorQuantize:   { value: 0.0 },
+    uAberration:      { value: 0.0030 },
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
@@ -161,6 +163,7 @@ const CartoonPostShader = {
     uniform vec3  uColorTint;
     uniform float uGrainIntensity;
     uniform float uColorQuantize;
+    uniform float uAberration;
     varying vec2 vUv;
 
     // ACES filmique (Narkowicz 2015)
@@ -175,7 +178,13 @@ const CartoonPostShader = {
     }
 
     void main() {
-      vec3 col = texture2D(tDiffuse, vUv).rgb;
+      // Aberration chromatique : décalage RGB croissant vers les bords (lentille caméra)
+      vec2 vd = vUv - 0.5;
+      float ab = uAberration * dot(vd, vd) * 3.0;
+      vec3 col;
+      col.r = texture2D(tDiffuse, vUv - vd * ab).r;
+      col.g = texture2D(tDiffuse, vUv).g;
+      col.b = texture2D(tDiffuse, vUv + vd * ab).b;
 
       // 1. Exposure
       col *= uExposure;
@@ -194,8 +203,7 @@ const CartoonPostShader = {
       float grain = (hash(vUv * vec2(1920.0, 1080.0) + uTime) - 0.5) * uGrainIntensity;
       col += grain;
 
-      // 6. Vignette radiale dense
-      vec2 vd = vUv - 0.5;
+      // 6. Vignette radiale dense (vd déjà calculé en haut pour l'aberration)
       float vdist = length(vd) * 1.4142;
       float vig = 1.0 - smoothstep(0.5, 1.0, pow(vdist, uVignetteFalloff)) * uVignetteStrength;
       col *= vig;
@@ -223,6 +231,10 @@ const _composerRT = new THREE.WebGLRenderTarget(1, 1, {
 });
 export const composer = new EffectComposer(renderer, _composerRT);
 composer.addPass(new RenderPass(scene, camera));
+// Bloom : les sources émissives (néons) bavent → halo cinématique. threshold
+// élevé pour ne capter que les lampes, pas tout l'écran.
+export const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.6, 0.5, 0.62);
+composer.addPass(bloomPass);
 export const cartoonPass = new ShaderPass(CartoonPostShader);
 composer.addPass(cartoonPass);
 // SMAA : anti-aliasing post-process en plus du MSAA hardware. Plus net sur
