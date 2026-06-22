@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { scene, camera, MAX_ANISOTROPY } from './renderer.js';
+import { scene, MAX_ANISOTROPY } from './renderer.js';
 import { FOG_FAR, FOG_NEAR, FOG_COLOR, EYE } from './config.js';
 
 // =============================================================================
@@ -59,22 +59,8 @@ if (scene.fog) {
 }
 scene.background = new THREE.Color(BR_FOG_COLOR);
 
-// =============================================================================
-//  LAMPE TORCHE — SpotLight attachée caméra (appoint dans les zones sombres,
-//  projette de vraies ombres mouvantes sur les cloisons = ambiance)
-// =============================================================================
-const flashlight = new THREE.SpotLight(0xfff3d6, 2.4, 24, Math.PI / 6, 0.45, 1.2);
-flashlight.position.set(0.18, -0.12, 0.1);     // tenue main droite, léger décalage
-flashlight.castShadow = true;
-flashlight.shadow.mapSize.set(1024, 1024);
-flashlight.shadow.camera.near = 0.2;
-flashlight.shadow.camera.far  = 24;
-flashlight.shadow.bias = -0.0015;
-const flashTarget = new THREE.Object3D();
-flashTarget.position.set(0, 0, -10);
-camera.add(flashlight);
-camera.add(flashTarget);
-flashlight.target = flashTarget;
+// (Lampe torche retirée — la vision nocturne du caméscope [touche C] est le seul
+//  moyen de voir dans le noir, façon Outlast.)
 
 // Defaults fog pour que le menu Graphismes puisse les restaurer
 export const fogDefaults = { near: BR_FOG_NEAR, far: BR_FOG_FAR };
