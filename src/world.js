@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+RectAreaLightUniformsLib.init();   // requis pour que les RectAreaLight éclairent correctement
 import { scene, MAX_ANISOTROPY } from './renderer.js';
 import { FOG_FAR, FOG_NEAR, FOG_COLOR, EYE } from './config.js';
 
@@ -34,9 +36,12 @@ const BR_CEIL_H = 3.0;           // hauteur plafond (bas = oppressant)
 // =============================================================================
 //  LUMIÈRES + FOG — ambiance jaune plate (la peur vient du vide, pas du noir)
 // =============================================================================
-const ambient = new THREE.AmbientLight(0xffe8b0, 0.22);   // base sombre : la lumière vient des néons + lampe torche
+// Ambient/hemi TRÈS bas : la lumière doit venir des dalles (RectAreaLight) pour
+// un fort contraste lumière/obscurité (RE7/SH). L'ambient n'est qu'un plancher
+// anti-noir-total.
+const ambient = new THREE.AmbientLight(0xffe8b0, 0.10);
 scene.add(ambient);
-const hemi = new THREE.HemisphereLight(0xffe9a0, 0x33301c, 0.18);
+const hemi = new THREE.HemisphereLight(0xffe9a0, 0x2a2618, 0.10);
 scene.add(hemi);
 // Lune conservée (exportée pour le menu Graphismes) mais éteinte : éclairage
 // plat des Backrooms. mapSize/frustum prêts si on veut réactiver des ombres.
@@ -119,10 +124,10 @@ function registerFloor(mesh) { mesh.userData.isFloor = true; floorMeshes.push(me
 export function getLightLevelAt(pos) {
   let lvl = 0.25;                                   // ambient + hemi
   for (const n of zoneNeons) {
-    if (!n.isPointLight || n.intensity < 0.05) continue;
-    const range = n.distance || 12;
+    if ((!n.isPointLight && !n.isRectAreaLight) || n.intensity < 0.05) continue;
+    const range = n.distance || 14;               // RectAreaLight n'a pas de .distance
     const d = n.position.distanceTo(pos);
-    if (d < range) lvl += n.intensity * (1 - d / range) * 0.55;
+    if (d < range) lvl += Math.min(0.6, n.intensity * 0.12) * (1 - d / range);
   }
   return Math.min(1, lvl);
 }
@@ -419,9 +424,12 @@ function buildBackrooms(opts = {}) {
       if (Math.random() < skipProb) continue;      // cellule sans lampe → zone noire
       const p = cellCenter(col, row);
       const dramatic = Math.random() < 0.35;       // 1/3 grésillent à la SH3
-      const base = dramatic ? 1.0 : (0.45 + Math.random() * 0.35);
-      const l = new THREE.PointLight(0xffe6a0, base, BR_CELL * 3.2, 1.8);
-      l.position.set(p.x, CH - 0.25, p.z);
+      // RectAreaLight = dalle fluo surfacique : lumière douce qui bave sur murs,
+      // sol et plafond (au lieu d'un PointLight omni). C'est ce spill qui fait "AAA".
+      const base = dramatic ? 5.0 : (3.0 + Math.random() * 1.8);   // échelle RectAreaLight (legacy)
+      const l = new THREE.RectAreaLight(0xffe6a0, base, BR_CELL * 0.58, BR_CELL * 0.58);
+      l.position.set(p.x, CH - 0.06, p.z);
+      l.lookAt(p.x, 0, p.z);                        // émet vers le bas (le sol)
       l.userData = dramatic
         ? { base, flicker: true, dramaticFlicker: true, phase: Math.random() * 7, dramaticOff: 0, dramaticNext: Math.random() * 4 }
         : { base, flicker: true, phase: Math.random() * 7 };
@@ -631,7 +639,7 @@ export function updateWorld(dt) {
 // Stubs blackout conservés pour compat enemies.js / main.js
 export function startBlackout(_dur = 14) { /* no-op MVP */ }
 export function endBlackout() {
-  ambient.intensity = 0.22;
+  ambient.intensity = 0.10;
   if (scene.fog) scene.fog.far = BR_FOG_FAR;
   blackoutT = 0;
 }

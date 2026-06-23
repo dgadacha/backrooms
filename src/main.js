@@ -22,6 +22,8 @@ import {
 // quand la map active est le Niveau 0. Repasser ACTIVE_MAP (world.js) sur
 // 'bus_depot'/'terminus' réactive le jeu de zombies d'origine.
 const IS_BACKROOMS = ACTIVE_MAP === 'backrooms';
+// Aide dev : ?bright éclaire le menu (sinon étalonnage sombre) pour juger la scène 3D.
+const MENU_BRIGHT = (() => { try { return new URLSearchParams(location.search).has('bright'); } catch (e) { return false; } })();
 import { controls, initInput, updatePlayer, updateShake } from './player.js';
 import { initPlayerBody, updatePlayerBody } from './player-body.js';
 import {
@@ -582,9 +584,9 @@ function updateMenuCam(dt) {
   );
   // Étalonnage sombre du menu (restauré à 1.0 par startRun au lancement).
   if (cartoonPass) {
-    cartoonPass.uniforms.uExposure.value         = 0.42;
-    cartoonPass.uniforms.uVignetteStrength.value = 0.88;
-    cartoonPass.uniforms.uGrainIntensity.value   = 0.12;
+    cartoonPass.uniforms.uExposure.value         = MENU_BRIGHT ? 1.0  : 0.42;
+    cartoonPass.uniforms.uVignetteStrength.value = MENU_BRIGHT ? 0.32 : 0.88;
+    cartoonPass.uniforms.uGrainIntensity.value   = MENU_BRIGHT ? 0.06 : 0.12;
   }
 }
 
