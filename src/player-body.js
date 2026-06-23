@@ -79,10 +79,9 @@ function prepGLB(root) {
 // Corps low-poly SANS TÊTE (la caméra est au niveau du cou). Provisoire jusqu'au GLB.
 function buildPlaceholder() {
   const g = new THREE.Group();
-  const cloth = new THREE.MeshStandardMaterial({ color: 0x6f7787, roughness: 0.9 });   // chemise gris-bleu
-  const skin  = new THREE.MeshStandardMaterial({ color: 0xc89a78, roughness: 0.8 });   // peau (bras)
-  const pants = new THREE.MeshStandardMaterial({ color: 0x4a4f59, roughness: 0.95 });  // pantalon
-  const shoe  = new THREE.MeshStandardMaterial({ color: 0x2a2c33, roughness: 0.9 });   // chaussures
+  const suit  = new THREE.MeshStandardMaterial({ color: 0xe3c521, roughness: 0.55 });  // combinaison hazmat jaune
+  const glove = new THREE.MeshStandardMaterial({ color: 0x2a2c30, roughness: 0.7 });   // gants (contraste)
+  const boot  = new THREE.MeshStandardMaterial({ color: 0x202127, roughness: 0.85 });  // bottes
   const mk = (w, h, d, x, y, z, mat, rx = 0) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z); m.rotation.x = rx;
@@ -91,18 +90,18 @@ function buildPlaceholder() {
   };
   // Avant du corps = -Z (sens du regard). Torse fuselé SANS pont d'épaules (sinon
   // il bouche la vue vers le bas). Avant-bras inclinés vers l'avant = bien visibles.
-  mk(0.36, 0.46, 0.20, 0,     1.04, 0,     cloth);        // torse (abaissé → ne bouche pas la vue)
-  mk(0.40, 0.20, 0.23, 0,     0.80, 0,     pants);        // bassin
-  mk(0.13, 0.40, 0.15, -0.26, 1.06, 0,     skin);         // bras G (haut, nu)
-  mk(0.13, 0.40, 0.15,  0.26, 1.06, 0,     skin);         // bras D (haut, nu)
-  mk(0.12, 0.46, 0.14, -0.25, 0.98, -0.34, skin, -1.0);   // avant-bras G (tendu vers l'avant)
-  mk(0.12, 0.46, 0.14,  0.25, 0.98, -0.34, skin, -1.0);   // avant-bras D
-  mk(0.13, 0.14, 0.15, -0.25, 0.82, -0.56, skin);         // main G
-  mk(0.13, 0.14, 0.15,  0.25, 0.82, -0.56, skin);         // main D
-  mk(0.17, 0.80, 0.20, -0.11, 0.40, 0,     pants);        // jambe G
-  mk(0.17, 0.80, 0.20,  0.11, 0.40, 0,     pants);        // jambe D
-  mk(0.16, 0.13, 0.31, -0.11, 0.06, -0.08, shoe);         // pied G
-  mk(0.16, 0.13, 0.31,  0.11, 0.06, -0.08, shoe);         // pied D
+  mk(0.36, 0.46, 0.20, 0,     1.04, 0,     suit);         // torse (abaissé → ne bouche pas la vue)
+  mk(0.40, 0.20, 0.23, 0,     0.80, 0,     suit);         // bassin
+  mk(0.13, 0.40, 0.15, -0.26, 1.06, 0,     suit);         // bras G (manche)
+  mk(0.13, 0.40, 0.15,  0.26, 1.06, 0,     suit);         // bras D (manche)
+  mk(0.12, 0.46, 0.14, -0.25, 0.98, -0.34, suit, -1.0);   // avant-bras G (tendu vers l'avant)
+  mk(0.12, 0.46, 0.14,  0.25, 0.98, -0.34, suit, -1.0);   // avant-bras D
+  mk(0.13, 0.14, 0.15, -0.25, 0.82, -0.56, glove);        // gant G
+  mk(0.13, 0.14, 0.15,  0.25, 0.82, -0.56, glove);        // gant D
+  mk(0.17, 0.80, 0.20, -0.11, 0.40, 0,     suit);         // jambe G
+  mk(0.17, 0.80, 0.20,  0.11, 0.40, 0,     suit);         // jambe D
+  mk(0.16, 0.13, 0.31, -0.11, 0.06, -0.08, boot);         // botte G
+  mk(0.16, 0.13, 0.31,  0.11, 0.06, -0.08, boot);         // botte D
   return g;
 }
 
