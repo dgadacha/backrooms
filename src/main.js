@@ -460,6 +460,8 @@ function gameOver() {
 //  SANTÉ MENTALE (Backrooms) — baisse en continu, plus vite dans le noir.
 //  Feedback immersif : vignette qui se referme + grain qui monte. 0 = game over.
 // =============================================================================
+const elSanity = document.getElementById('sanity');
+const elSanityFill = document.getElementById('sanity-fill');
 function updateSanity(dt) {
   const light = getLightLevelAt(camera.position);     // 0 sombre → 1 éclairé
   const darkness = Math.max(0, 1 - light);
@@ -468,6 +470,17 @@ function updateSanity(dt) {
   const pulse = player.sanity < 35 ? (0.5 + 0.5 * Math.sin(performance.now() * 0.006)) * 0.12 : 0;
   cartoonPass.uniforms.uVignetteStrength.value = 0.58 + fear * 0.36 + pulse;
   cartoonPass.uniforms.uGrainIntensity.value   = 0;                      // grain retiré (demande Dylan)
+  // Jauge de santé mentale (HUD bas-gauche) : largeur + couleur cyan-pâle (calme)
+  // → rouge (panique), + classe .crit (pulsation) sous 25%.
+  if (elSanityFill) {
+    const pct = player.sanity;
+    const t = pct / 100;
+    const cr = Math.round(208 - t * 70), cg = Math.round(40 + t * 165), cb = Math.round(55 + t * 150);
+    elSanityFill.style.width = pct + '%';
+    elSanityFill.style.background = `rgb(${cr},${cg},${cb})`;
+    elSanityFill.style.boxShadow = `0 0 ${(6 + (1 - t) * 9).toFixed(1)}px rgba(${cr},${cg},${cb},${(0.45 + (1 - t) * 0.4).toFixed(2)})`;
+    if (elSanity) elSanity.classList.toggle('crit', pct < 25);
+  }
   if (player.sanity <= 0) gameOver();
 }
 
