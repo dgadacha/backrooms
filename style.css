@@ -1689,3 +1689,18 @@ body {
 #menu .sh-menu-item:nth-child(2) { animation-delay: 0.62s; }
 #menu .sh-menu-item:nth-child(3) { animation-delay: 0.74s; }
 #menu .controls { animation: menu-rise 0.8s ease 0.95s both; }
+
+/* ----- Menu : scène 3D vivante en fond (caméra qui dérive lentement) + scrim
+   sombre cinématique pour l'ambiance et la lisibilité du texte. Override du fond
+   opaque de .screen — uniquement #menu (pause/options/gameover restent opaques). */
+#menu {
+  background:
+    radial-gradient(ellipse 130% 100% at 50% 33%,
+      rgba(5,6,9,0.10) 0%, rgba(5,6,9,0.34) 50%, rgba(2,3,5,0.70) 100%),
+    linear-gradient(to bottom,
+      rgba(5,6,9,0.46) 0%, rgba(5,6,9,0.26) 34%,
+      rgba(3,4,7,0.60) 74%, rgba(2,2,4,0.88) 100%);
+}
+#menu .sh-menu-item,
+#menu .controls,
+#menu .controls-title { text-shadow: 0 2px 14px rgba(0,0,0,0.92); }

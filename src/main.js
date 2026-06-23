@@ -6,7 +6,7 @@ import {
 } from './graphics-settings.js';
 import { moon, interactableSpots, groundDecals, glowSprites, fogDefaults, lampPositions } from './world.js';
 import { State, game, player, wave, resetState } from './state.js';
-import { PERK_REGEN_DELAY, PERK_REGEN_RATE } from './config.js';
+import { PERK_REGEN_DELAY, PERK_REGEN_RATE, EYE } from './config.js';
 import { initAudio, sfx, setupSpatialLamps } from './audio.js';
 import {
   updateHUD, showHud, showScreen, hideScreens,
@@ -410,6 +410,16 @@ if (scaleSlider && scaleValueEl) {
 
 function startRun() {
   game.state = State.PLAY;
+  // La caméra du menu a dérivé (updateMenuCam) → on la replace au spawn et on
+  // restaure la luminosité de jeu (le menu tournait en étalonnage sombre).
+  const zone = getZone('bus_depot');
+  camera.position.set(
+    zone.playerSpawn.x + zone.baseX,
+    zone.playerSpawn.y + zone.baseY,
+    zone.playerSpawn.z + zone.baseZ,
+  );
+  camera.rotation.set(0, zone.playerSpawnYaw || 0, 0, 'YXZ');
+  if (cartoonPass) cartoonPass.uniforms.uExposure.value = 1.0;
   if (!IS_BACKROOMS) startWave(getStartingWave());
 }
 function resetRun() {
@@ -550,6 +560,34 @@ const clock = new THREE.Clock();
 let shadowTick = 0;
 let capLastFrameTime = 0;
 
+// =============================================================================
+//  MENU — caméra cinématique : dérive lente dans les Backrooms + étalonnage
+//  sombre (ambiance). La scène 3D est rendue derrière le menu (fond translucide).
+// =============================================================================
+let menuCamT = 0;
+function updateMenuCam(dt) {
+  menuCamT += dt;
+  const t = menuCamT;
+  // Dérive lente en cercle dans la zone dégagée du spawn (parallaxe), surélevée.
+  camera.position.set(
+    Math.sin(t * 0.06) * 0.7,
+    EYE + 0.22 + Math.sin(t * 0.45) * 0.045,
+    Math.cos(t * 0.05) * 0.7,
+  );
+  // Pan yaw très lent + léger pitch bas + micro-bob.
+  camera.rotation.set(
+    -0.05 + Math.sin(t * 0.27) * 0.012,
+    Math.sin(t * 0.043) * 0.7,
+    0, 'YXZ',
+  );
+  // Étalonnage sombre du menu (restauré à 1.0 par startRun au lancement).
+  if (cartoonPass) {
+    cartoonPass.uniforms.uExposure.value         = 0.42;
+    cartoonPass.uniforms.uVignetteStrength.value = 0.88;
+    cartoonPass.uniforms.uGrainIntensity.value   = 0.12;
+  }
+}
+
 function loop() {
   requestAnimationFrame(loop);
   const cap = liveSettings.fpsCap;
@@ -629,6 +667,7 @@ function loop() {
     }
     if (dead) gameOver();
   } else {
+    if (IS_BACKROOMS && game.state === State.MENU) { updateMenuCam(dt); updateWorld(dt); }
     updateLowHpVignette();
   }
   updateShake(dt);
