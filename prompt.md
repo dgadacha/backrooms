@@ -133,9 +133,22 @@ Full body character concept sheet, person wearing a bright yellow full-body hazm
 
 ### À venir
 
-- **Entité qui traque** (itér. 3) : créature liminale cauchemardesque. Workflow
-  Midjourney (image de concept) → **Meshy AI** (Image to 3D, Low Poly, rig si
-  possible) → `public/models/entity.glb`. Prompt à affiner le moment venu.
+- **Entité qui traque** (itér. 5) : créature liminale cauchemardesque, pâle et
+  décharnée, **sans visage** — elle te poursuit dans les couloirs. Workflow
+  Midjourney (concept) → **Meshy AI** (Image to 3D, Low Poly, **rig + anim si
+  possible** : il lui faut une démarche/course) → `public/models/entity.glb`.
+  - **Pour Meshy** : figure **entière de face, fond gris uni, lumière diffuse
+    uniforme** (sinon la conversion 3D bave). La DA sombre vient de l'éclairage
+    en jeu, pas du concept — garde le concept clair et net.
+  - **Pose** : debout, bras le long du corps ou légèrement écartés (rig propre).
+
+  Prompt Midjourney — *« Le Pâle »* (humanoïde décharné sans visage) :
+```
+Full body creature concept sheet, tall gaunt emaciated humanoid monster, pale grey clammy waxy skin stretched tight over a skeletal frame, visible ribs and sharp protruding bones, unnaturally long thin elongated limbs, long bony clawed fingers, hunched stalking posture, smooth featureless head with no eyes and a wide gaping lipless mouth lined with needle teeth, mouth slightly agape, standing upright facing forward, full figure from head to toe, plain neutral grey studio background, even diffuse lighting, no harsh shadows, photorealistic, hyperdetailed skin, body horror, nightmarish, deeply unsettling --ar 2:3 --style raw --v 6.1
+```
+  - Variantes pour pousser l'horreur : tête → `a head split vertically into a
+    gaping toothy maw, no eyes` ; peau → `skin like melted dripping wax` ;
+    membres → `too many joints, limbs bent the wrong way`.
 - **Props** (chaises renversées, néons cassés, panneaux de sortie, caméscope) :
   idem Midjourney → Meshy → `public/models/`.
 
