@@ -82,7 +82,7 @@ const WALK_TIMESCALE_MAX = 1.25; // anim ne devient jamais frénétique
 
 const gltfLoader = new GLTFLoader(loadingManager);
 gltfLoader.load(
-  'public/models/zombie.glb',
+  '/models/zombie.glb',
   (gltf) => {
     zombieTemplate = gltf.scene;
     zombieAnimations = gltf.animations;

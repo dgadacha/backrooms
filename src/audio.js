@@ -45,7 +45,7 @@ const AMBIENT_TRACKS = [
 
 function startAmbientSamples() {
   for (const t of AMBIENT_TRACKS) {
-    const audio = new Audio(`public/audio/sfx/ambient/${t.file}`);
+    const audio = new Audio(`/audio/sfx/ambient/${t.file}`);
     audio.loop = true;
     audio.volume = t.volume;
     audio.preload = 'auto';
@@ -94,7 +94,7 @@ export function setupSpatialLamps(scene, camera, positions, yHeight = 4.7) {
 
   // 2. Charge le buffer audio UNE SEULE FOIS, puis distribue à toutes les instances
   const audioLoader = new THREE.AudioLoader();
-  audioLoader.load('public/audio/sfx/ambient/lamp_buzz.mp3', (buffer) => {
+  audioLoader.load('/audio/sfx/ambient/lamp_buzz.mp3', (buffer) => {
     lampBuzzBuffer = buffer;
     // Assigne le buffer à toutes les instances déjà créées et démarre
     for (const sound of lampBuzzInstances) {

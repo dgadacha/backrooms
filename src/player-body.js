@@ -11,7 +11,7 @@ import { isMoving, isSprinting } from './player.js';
 //  Un rig suit la POSITION + le YAW de la caméra mais PAS le pitch : quand on
 //  baisse les yeux, on voit son propre corps ; quand on court, il tangue (bob).
 //  La caméra reste à hauteur d'œil (EYE) ; le rig est calé au sol sous elle, un
-//  poil en arrière pour sortir la tête du champ. Charge public/models/player.glb
+//  poil en arrière pour sortir la tête du champ. Charge /models/player.glb
 //  (fallback : placeholder procédural sans tête, caméra placée au niveau du cou).
 // =============================================================================
 
@@ -38,7 +38,7 @@ export function initPlayerBody() {
 
   const loader = new GLTFLoader(loadingManager);
   loader.load(
-    'public/models/player.glb',
+    '/models/player.glb',
     (g) => setModel(prepGLB(g.scene)),
     undefined,
     () => setModel(buildPlaceholder()),   // 404 → corps procédural

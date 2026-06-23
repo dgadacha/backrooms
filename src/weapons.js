@@ -92,7 +92,7 @@ const PISTOL_ROTATION = { x: 0, y: 0, z: 0 }; // modèle mains+pistol déjà ori
 
 const pistolGltfLoader = new GLTFLoader(loadingManager);
 pistolGltfLoader.load(
-  'public/models/pistol.glb',
+  '/models/pistol.glb',
   (gltf) => {
     const pistolModel = gltf.scene;
     let _pTris = 0;
@@ -184,7 +184,7 @@ const SHOTGUN_ROTATION = { x: 0, y: 0, z: 0 }; // modèle mains+shotgun déjà o
 
 const shotgunGltfLoader = new GLTFLoader(loadingManager);
 shotgunGltfLoader.load(
-  'public/models/shotgun_fps.glb',
+  '/models/shotgun_fps.glb',
   (gltf) => {
     const shotgunModel = gltf.scene;
     let _sTris = 0;
@@ -273,7 +273,7 @@ shotgunGroup.visible = false;
 smgGroup.visible = false;
 
 // =============================================================================
-//  MUZZLE FLASH + SMOKE (textures Midjourney sur public/textures/)
+//  MUZZLE FLASH + SMOKE (textures Midjourney sur /textures/)
 //  - Flash : snappy (~80ms), couleur tintée jaune, additive blending
 //  - Smoke : fade lent (~400ms), légèrement scalé plus grand, derrière le flash
 //  En Mode PS1 : NEAREST + tente le dossier ps1/ avec fallback moderne.
@@ -296,9 +296,9 @@ function loadMuzzleTex(name) {
     img.src = url;
   };
   if (PS1_MODE) {
-    loadInto(`public/textures/ps1/${name}.png`, () => loadInto(`public/textures/${name}.png`));
+    loadInto(`/textures/ps1/${name}.png`, () => loadInto(`/textures/${name}.png`));
   } else {
-    loadInto(`public/textures/${name}.png`);
+    loadInto(`/textures/${name}.png`);
   }
   return tex;
 }

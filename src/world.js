@@ -145,7 +145,7 @@ function makeTex(draw, rep=1, size=64) {
   return t;
 }
 
-// Charge public/textures/<name>.png et l'applique sur un MeshStandardMaterial.
+// Charge /textures/<name>.png et l'applique sur un MeshStandardMaterial.
 // FALLBACK-SAFE : si le PNG est absent (404), le matériau garde sa texture
 // procédurale → le jeu marche avant même que les textures soient générées.
 // Voir prompt.md pour les prompts Midjourney + les noms de fichiers attendus.
@@ -164,7 +164,7 @@ function loadTex(name, repeat, colorSpace, onReady) {
     onReady(t);
   };
   img.onerror = () => { /* garde le fallback procédural */ };
-  img.src = `public/textures/${name}.png`;
+  img.src = `/textures/${name}.png`;
 }
 function applyPBR(mat, name, repeat) {
   loadTex(name, repeat, THREE.SRGBColorSpace, (t) => {
@@ -318,7 +318,7 @@ function buildBackrooms(opts = {}) {
   }, BR_COLS, 256);
 
   // Matériaux PBR (MeshStandard) : albedo procédural en fallback, remplacé par
-  // tes PNG dès qu'ils sont dans public/textures/ (carpet_yellow / wallpaper_yellow
+  // tes PNG dès qu'ils sont dans /textures/ (carpet_yellow / wallpaper_yellow
   // / ceiling_tile — voir prompt.md). wallMatPerim = repeat dense pour les longs
   // murs d'enceinte (sinon le motif s'étire).
   const carpetMat    = new THREE.MeshStandardMaterial({ map: carpetTex, roughness: 0.96, metalness: 0 });
