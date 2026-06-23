@@ -465,7 +465,7 @@ function updateSanity(dt) {
   const fear = 1 - player.sanity / 100;
   const pulse = player.sanity < 35 ? (0.5 + 0.5 * Math.sin(performance.now() * 0.006)) * 0.12 : 0;
   cartoonPass.uniforms.uVignetteStrength.value = 0.58 + fear * 0.36 + pulse;
-  cartoonPass.uniforms.uGrainIntensity.value   = 0.012 + fear * 0.05;   // jeu normal ~propre ; monte si santé mentale basse
+  cartoonPass.uniforms.uGrainIntensity.value   = 0;                      // grain retiré (demande Dylan)
   if (player.sanity <= 0) gameOver();
 }
 
@@ -586,7 +586,7 @@ function updateMenuCam(dt) {
   if (cartoonPass) {
     cartoonPass.uniforms.uExposure.value         = MENU_BRIGHT ? 1.0  : 0.42;
     cartoonPass.uniforms.uVignetteStrength.value = MENU_BRIGHT ? 0.32 : 0.88;
-    cartoonPass.uniforms.uGrainIntensity.value   = MENU_BRIGHT ? 0.06 : 0.12;
+    cartoonPass.uniforms.uGrainIntensity.value   = 0;   // grain retiré (menu aussi)
   }
 }
 

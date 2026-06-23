@@ -186,7 +186,7 @@ function apply() {
     cartoonPass.uniforms.uSaturationBoost.value  = 0.82;
     cartoonPass.uniforms.uVignetteStrength.value = 0.60;
     cartoonPass.uniforms.uVignetteFalloff.value  = 1.7;
-    cartoonPass.uniforms.uGrainIntensity.value   = 0.085;
+    cartoonPass.uniforms.uGrainIntensity.value   = 0;
     cartoonPass.uniforms.uColorTint.value.set(1.0, 0.99, 0.9);
   }
 
