@@ -211,7 +211,7 @@ class GradeEffect extends Effect {
 // =============================================================================
 export const composer = new EffectComposer(renderer, {
   frameBufferType: THREE.HalfFloatType,
-  multisampling: 4,                 // MSAA 4× (N8AO désactivé → plus de contrainte depth)
+  multisampling: 0,                 // pas de MSAA (coûteux en HDR) — SMAA gère l'anti-alias
 });
 composer.addPass(new RenderPass(scene, camera));
 
@@ -264,7 +264,7 @@ const _szTmp = new THREE.Vector2();
 export function maybeResize() {
   const cw = canvas.clientWidth  || window.innerWidth  || 1280;
   const ch = canvas.clientHeight || window.innerHeight || 720;
-  const pr = Math.min(window.devicePixelRatio || 1, 2);
+  const pr = Math.min(window.devicePixelRatio || 1, 1.5);   // cap 1.5 (perf) : scène foggy → 2.0 inutile
   if (renderer.getPixelRatio() !== pr) renderer.setPixelRatio(pr);
   renderer.getSize(_szTmp);
   if (Math.round(_szTmp.x) !== Math.round(cw) || Math.round(_szTmp.y) !== Math.round(ch)) {

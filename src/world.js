@@ -419,8 +419,11 @@ function buildBackrooms(opts = {}) {
       levelGroup.add(panel);
     }
   }
-  for (let col = 1; col < BR_COLS; col += 3) {
-    for (let row = 1; row < BR_ROWS; row += 3) {
+  // Pas de grille 4 (au lieu de 3) → ~7 RectAreaLights au lieu de ~13 : les
+  // lumières surfaciques LTC sont chères, c'est le 1er levier perf. Plus de
+  // zones sombres entre les pools = plus de contraste/horreur, tant mieux.
+  for (let col = 1; col < BR_COLS; col += 4) {
+    for (let row = 1; row < BR_ROWS; row += 4) {
       if (Math.random() < skipProb) continue;      // cellule sans lampe → zone noire
       const p = cellCenter(col, row);
       const dramatic = Math.random() < 0.35;       // 1/3 grésillent à la SH3
