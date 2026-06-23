@@ -1,11 +1,9 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+import {
+  EffectComposer, RenderPass, EffectPass,
+  BloomEffect, SMAAEffect, SMAAPreset, Effect, BlendFunction,
+} from 'postprocessing';
+import { N8AOPostPass } from 'n8ao';
 import { FOG_NEAR, FOG_FAR, FOG_COLOR, SPAWN } from './config.js';
 import { PS1_MODE, PS2_MODE, FLAT_SHADING } from './graphics-settings.js';
 
@@ -22,7 +20,7 @@ export const canvas = document.getElementById('game');
 // Mode PS1 : antialias OFF (aliasing volontaire), shadows OFF (incohérent
 // avec basse résolution), classe CSS `pixelated` ajoutée au canvas.
 // PS2 mode : antialias OFF (jaggies signature), BasicShadowMap (ombres dures pixelisées)
-export const renderer = new THREE.WebGLRenderer({ canvas, antialias: !PS1_MODE && !PS2_MODE });
+export const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });  // AA via pmndrs (MSAA composer)
 renderer.setClearColor(FOG_COLOR);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.NoToneMapping;
@@ -134,139 +132,124 @@ scene.add(camera);
 //  5. Grain off
 //  6. Pas de vignette
 //  7. Color quantize off
-const CartoonPostShader = {
-  uniforms: {
-    tDiffuse:         { value: null },
-    uTime:            { value: 0 },
-    uExposure:        { value: 1.05 },
-    uSaturationBoost: { value: 1.10 },
-    uVignetteStrength:{ value: 0.0 },
-    uVignetteFalloff: { value: 1.4 },
-    uColorTint:       { value: new THREE.Vector3(1.0, 1.0, 1.0) },
-    uGrainIntensity:  { value: 0.0 },
-    uColorQuantize:   { value: 0.0 },
-    uAberration:      { value: 0.0030 },
-    uNightVision:     { value: 0.0 },
-  },
-  vertexShader: /* glsl */`
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+// =============================================================================
+//  GRADE found-footage — porté de l'ancien CartoonPostShader vers un Effect
+//  pmndrs (postprocessing). Per-pixel : exposure + ACES + saturation + teinte +
+//  vision nocturne + grain + vignette + quantize. (L'aberration multi-tap n'est
+//  pas rebranchée pour l'instant.) Les uniforms du Map sont auto-déclarés par
+//  pmndrs → on ne les redéclare PAS dans le shader. mainImage reçoit `uv`.
+//  ACES s'applique maintenant sur du HDR linéaire (pipeline HalfFloat) → la
+//  réponse tonale diffère de l'ancien, on re-règle exposure/grade en conséquence.
+// =============================================================================
+const _gradeFrag = /* glsl */`
+  uniform float uExposure;
+  uniform float uSaturationBoost;
+  uniform float uVignetteStrength;
+  uniform float uVignetteFalloff;
+  uniform vec3  uColorTint;
+  uniform float uGrainIntensity;
+  uniform float uColorQuantize;
+  uniform float uNightVision;
+  uniform float uTime;
+
+  vec3 ACESFilm(vec3 x) {
+    float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
+    return clamp((x * (a*x + b)) / (x * (c*x + d) + e), 0.0, 1.0);
+  }
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+  void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
+    vec3 col = inputColor.rgb;
+    col *= uExposure;                                   // 1. exposure
+    col = ACESFilm(col);                                // 2. ACES (HDR linéaire)
+    float gray = dot(col, vec3(0.299, 0.587, 0.114));
+    col = mix(vec3(gray), col, uSaturationBoost);       // 3. saturation
+    col *= uColorTint;                                  // 4. teinte
+    if (uNightVision > 0.001) {                         // 4.5 vision nocturne caméscope
+      float lum = dot(col, vec3(0.30, 0.59, 0.11));
+      lum = pow(clamp(lum, 0.0, 1.0), 0.45) * 1.7;
+      float n = (hash(uv * vec2(1280.0, 720.0) + uTime * 60.0) - 0.5) * 0.18;
+      vec3 nv = clamp(vec3(lum * 0.18, lum, lum * 0.30) + n, 0.0, 1.0);
+      col = mix(col, nv, uNightVision);
     }
-  `,
-  fragmentShader: /* glsl */`
-    uniform sampler2D tDiffuse;
-    uniform float uTime;
-    uniform float uExposure;
-    uniform float uSaturationBoost;
-    uniform float uVignetteStrength;
-    uniform float uVignetteFalloff;
-    uniform vec3  uColorTint;
-    uniform float uGrainIntensity;
-    uniform float uColorQuantize;
-    uniform float uAberration;
-    uniform float uNightVision;
-    varying vec2 vUv;
+    float grain = (hash(uv * vec2(1920.0, 1080.0) + uTime) - 0.5) * uGrainIntensity;
+    col += grain;                                       // 5. grain
+    vec2 vd = uv - 0.5;                                 // 6. vignette
+    float vdist = length(vd) * 1.4142;
+    float vig = 1.0 - smoothstep(0.5, 1.0, pow(vdist, uVignetteFalloff)) * uVignetteStrength;
+    col *= vig;
+    col = clamp(col, 0.0, 1.0);
+    if (uColorQuantize > 0.5) col = floor(col * uColorQuantize) / uColorQuantize;   // 7. quantize
+    outputColor = vec4(col, inputColor.a);
+  }
+`;
 
-    // ACES filmique (Narkowicz 2015)
-    vec3 ACESFilm(vec3 x) {
-      float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
-      return clamp((x * (a*x + b)) / (x * (c*x + d) + e), 0.0, 1.0);
-    }
-
-    // Pseudo-random hash pour le grain (Inigo Quilez classic)
-    float hash(vec2 p) {
-      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-    }
-
-    void main() {
-      // Aberration chromatique : décalage RGB croissant vers les bords (lentille caméra)
-      vec2 vd = vUv - 0.5;
-      float ab = uAberration * dot(vd, vd) * 3.0;
-      vec3 col;
-      col.r = texture2D(tDiffuse, vUv - vd * ab).r;
-      col.g = texture2D(tDiffuse, vUv).g;
-      col.b = texture2D(tDiffuse, vUv + vd * ab).b;
-
-      // 1. Exposure
-      col *= uExposure;
-
-      // 2. ACES filmique
-      col = ACESFilm(col);
-
-      // 3. Saturation (désat forte SH3)
-      float gray = dot(col, vec3(0.299, 0.587, 0.114));
-      col = mix(vec3(gray), col, uSaturationBoost);
-
-      // 4. Teinte froide subtile (verdâtre/grise SH3)
-      col *= uColorTint;
-
-      // 4.5 Vision nocturne (caméscope) : amplifie les basses lumières + teinte verte + bruit
-      if (uNightVision > 0.001) {
-        float lum = dot(col, vec3(0.30, 0.59, 0.11));
-        lum = pow(clamp(lum, 0.0, 1.0), 0.45) * 1.7;
-        float n = (hash(vUv * vec2(1280.0, 720.0) + uTime * 60.0) - 0.5) * 0.18;
-        vec3 nv = clamp(vec3(lum * 0.18, lum, lum * 0.30) + n, 0.0, 1.0);
-        col = mix(col, nv, uNightVision);
-      }
-
-      // 5. Grain léger (effet caméra usée PS2)
-      float grain = (hash(vUv * vec2(1920.0, 1080.0) + uTime) - 0.5) * uGrainIntensity;
-      col += grain;
-
-      // 6. Vignette radiale dense (vd déjà calculé en haut pour l'aberration)
-      float vdist = length(vd) * 1.4142;
-      float vig = 1.0 - smoothstep(0.5, 1.0, pow(vdist, uVignetteFalloff)) * uVignetteStrength;
-      col *= vig;
-
-      col = clamp(col, 0.0, 1.0);
-
-      // 7. PS2 color quantize (16-bit color depth signature) — actif si > 0
-      if (uColorQuantize > 0.5) {
-        col = floor(col * uColorQuantize) / uColorQuantize;
-      }
-
-      gl_FragColor = vec4(col, 1.0);
-    }
-  `,
-};
-
-// PIÈGE Three.js : le MSAA hardware (antialias: true du WebGLRenderer) est
-// IGNORÉ quand on utilise un EffectComposer — le rendu va dans un renderTarget
-// custom sans MSAA. Solution : forcer samples=4 sur le RT du composer pour
-// récupérer le MSAA 4x dans le pipeline post-process. Coût : ~20% GPU.
-const _composerRT = new THREE.WebGLRenderTarget(1, 1, {
-  type: THREE.UnsignedByteType,
-  colorSpace: THREE.SRGBColorSpace,
-  samples: 4,
-});
-export const composer = new EffectComposer(renderer, _composerRT);
-// SSAO : occlusion ambiante en screen-space → ombres de contact dans les coins,
-// jonctions mur/sol/plafond, sous les cloisons. Ancre toute la géo (gros gain
-// réalisme). Rend la scène lui-même → remplace le RenderPass.
-export const ssaoPass = new SSAOPass(scene, camera, 1, 1);
-// Rayon SERRÉ : l'AO ne vit que dans le creux des coins (jonctions mur/sol),
-// pas en bande noire le long des arêtes (le « halo » daté Far Cry 3). minDistance
-// un poil relevé pour ignorer les micro-différences de profondeur (auto-occlusion).
-ssaoPass.kernelRadius = 0.14;
-ssaoPass.minDistance  = 0.0008;
-ssaoPass.maxDistance  = 0.035;
-composer.addPass(ssaoPass);
-// Bloom : les sources émissives (néons) bavent → halo cinématique. threshold
-// élevé pour ne capter que les lampes, pas tout l'écran.
-export const bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.6, 0.5, 0.62);
-composer.addPass(bloomPass);
-export const cartoonPass = new ShaderPass(CartoonPostShader);
-composer.addPass(cartoonPass);
-// SMAA : anti-aliasing post-process en plus du MSAA hardware. Plus net sur
-// les bords (silhouettes), surtout combiné au DPR 2.0. Coût ~10-15 % GPU.
-// Skip en modes PS1/PS2 où l'aliasing est volontaire.
-if (!PS1_MODE && !PS2_MODE) {
-  const size = renderer.getDrawingBufferSize(new THREE.Vector2());
-  composer.addPass(new SMAAPass(size.x, size.y));
+class GradeEffect extends Effect {
+  constructor() {
+    super('GradeEffect', _gradeFrag, {
+      blendFunction: BlendFunction.NORMAL,
+      uniforms: new Map([
+        ['uExposure',         new THREE.Uniform(1.05)],
+        ['uSaturationBoost',  new THREE.Uniform(1.10)],
+        ['uVignetteStrength', new THREE.Uniform(0.0)],
+        ['uVignetteFalloff',  new THREE.Uniform(1.4)],
+        ['uColorTint',        new THREE.Uniform(new THREE.Vector3(1.0, 1.0, 1.0))],
+        ['uGrainIntensity',   new THREE.Uniform(0.0)],
+        ['uColorQuantize',    new THREE.Uniform(0.0)],
+        ['uNightVision',      new THREE.Uniform(0.0)],
+        ['uTime',             new THREE.Uniform(0.0)],
+      ]),
+    });
+  }
 }
-composer.addPass(new OutputPass());
+
+// =============================================================================
+//  POSTPROCESSING — pipeline pmndrs (postprocessing), HDR (HalfFloat) + MSAA 4× :
+//    RenderPass → N8AO (AO de contact) → Bloom → Grade found-footage [→ SMAA]
+//  N8AO remplace le SSAO daté (halo Far Cry 3). Tout tourne en HDR linéaire,
+//  l'encodage sRGB final est géré par pmndrs.
+// =============================================================================
+export const composer = new EffectComposer(renderer, {
+  frameBufferType: THREE.HalfFloatType,
+  multisampling: 4,                 // MSAA 4× (N8AO désactivé → plus de contrainte depth)
+});
+composer.addPass(new RenderPass(scene, camera));
+
+// N8AO — occlusion ambiante de contact (n8ao). DÉSACTIVÉ pour l'instant :
+// bug de viewport avec notre composer pmndrs quand DPR≠1 → l'AO interne est bien
+// full-res (vérifié) mais le blit final ne couvre que le quart haut-gauche.
+// À reprendre (patch viewport n8ao). Le reste du pipeline HDR tourne sans lui.
+// const _aoSize = renderer.getDrawingBufferSize(new THREE.Vector2());
+// export const n8aoPass = new N8AOPostPass(scene, camera, Math.max(1, _aoSize.x), Math.max(1, _aoSize.y));
+// n8aoPass.configuration.aoRadius = 1.2; n8aoPass.configuration.intensity = 2.4;
+// composer.addPass(n8aoPass);
+
+// Bloom (effet de convolution → passe dédiée) : halo des néons émissifs.
+composer.addPass(new EffectPass(camera, new BloomEffect({
+  intensity: 0.8, luminanceThreshold: 0.6, luminanceSmoothing: 0.4, mipmapBlur: true,
+})));
+
+// Grade found-footage (ex-CartoonPostShader) + SMAA. Shim `cartoonPass.uniforms.*`
+// (THREE.Uniform → .value) pour que main.js / graphics-settings pilotent
+// exposure/vignette/grain/teinte/vision nocturne sans aucun changement.
+const _grade = new GradeEffect();
+export const cartoonPass = {
+  uniforms: {
+    uExposure:         _grade.uniforms.get('uExposure'),
+    uSaturationBoost:  _grade.uniforms.get('uSaturationBoost'),
+    uVignetteStrength: _grade.uniforms.get('uVignetteStrength'),
+    uVignetteFalloff:  _grade.uniforms.get('uVignetteFalloff'),
+    uColorTint:        _grade.uniforms.get('uColorTint'),
+    uGrainIntensity:   _grade.uniforms.get('uGrainIntensity'),
+    uColorQuantize:    _grade.uniforms.get('uColorQuantize'),
+    uNightVision:      _grade.uniforms.get('uNightVision'),
+    uTime:             _grade.uniforms.get('uTime'),
+    uAberration:       { value: 0.0030 },   // dummy (aberration non rebranchée)
+  },
+};
+const _post = [_grade];
+if (!PS1_MODE && !PS2_MODE) _post.push(new SMAAEffect({ preset: SMAAPreset.HIGH }));
+composer.addPass(new EffectPass(camera, ..._post));
 
 // Stub conservé pour compat ; plus de near/far à syncer en saturation-only
 export function syncCartoonPostCamera() { /* no-op */ }
@@ -277,26 +260,17 @@ export function syncCartoonPostCamera() { /* no-op */ }
 //  - Normal : HD natif avec DPR cap (réglé par graphics-settings)
 const PS1_RENDER_HEIGHT = 540;
 const PS2_RENDER_HEIGHT = 540; // ~480i PS2 widescreen, un poil au-dessus pour lisibilité HUD
+const _szTmp = new THREE.Vector2();
 export function maybeResize() {
   const cw = canvas.clientWidth  || window.innerWidth  || 1280;
   const ch = canvas.clientHeight || window.innerHeight || 720;
-  let wInternal, hInternal, pr;
-  if (PS1_MODE || PS2_MODE) {
-    const targetH = PS1_MODE ? PS1_RENDER_HEIGHT : PS2_RENDER_HEIGHT;
-    const scale = targetH / ch;
-    wInternal = Math.max(1, Math.round(cw * scale));
-    hInternal = Math.max(1, Math.round(ch * scale));
-    pr = 1;
-  } else {
-    pr = Math.min(window.devicePixelRatio || 1, 2);
-    wInternal = Math.round(cw * pr);
-    hInternal = Math.round(ch * pr);
-  }
-  if (canvas.width !== wInternal || canvas.height !== hInternal) {
-    renderer.setPixelRatio(pr);
-    const useInternal = PS1_MODE || PS2_MODE;
-    renderer.setSize(useInternal ? wInternal : cw, useInternal ? hInternal : ch, false);
-    composer.setSize(useInternal ? wInternal : cw, useInternal ? hInternal : ch);
+  const pr = Math.min(window.devicePixelRatio || 1, 2);
+  if (renderer.getPixelRatio() !== pr) renderer.setPixelRatio(pr);
+  renderer.getSize(_szTmp);
+  if (Math.round(_szTmp.x) !== Math.round(cw) || Math.round(_szTmp.y) !== Math.round(ch)) {
+    // pmndrs gère renderer.setSize + RTs au drawing buffer (cw*pr). updateStyle par
+    // défaut → pose un style inline sur le canvas (= valeur du calc, layout inchangé).
+    composer.setSize(cw, ch);
     camera.aspect = cw / ch;
     camera.updateProjectionMatrix();
   }
