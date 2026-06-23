@@ -108,6 +108,17 @@ body {
 #fps-counter.warn { color: var(--amber); }
 #fps-counter.bad  { color: var(--danger); }
 
+/* minimap (brouillard de guerre) — coin haut-droit */
+#minimap {
+  position: absolute; top: 16px; right: 16px;
+  width: 150px; height: 150px;
+  background: rgba(8, 8, 10, 0.5);
+  border: 1px solid rgba(235, 222, 168, 0.22);
+  border-radius: 3px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
 /* --- top-right : POINTS — style "note à la main" SH --- */
 #hud-top-right {
   position: absolute; top: 24px; right: 28px;

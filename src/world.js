@@ -264,6 +264,11 @@ const exitPos = new THREE.Vector3();   // position de la faille (sortie no-clip)
 let hasExit = false;
 export function getExitPos() { return hasExit ? exitPos : null; }
 
+// Données du labyrinthe courant (pour la minimap). Réassigné à chaque build →
+// la minimap détecte le changement de référence et réinitialise son brouillard.
+let _maze = null;
+export function getMaze() { return _maze; }
+
 function buildBackrooms(opts = {}) {
   const level = opts.level || 0;
   const deadProb = Math.min(0.55, 0.22 + level * 0.09);   // + de panneaux grillés en profondeur
@@ -398,6 +403,9 @@ function buildBackrooms(opts = {}) {
       active.push([nc, nr]);
     }
   }
+  // Expose le labyrinthe pour la minimap.
+  _maze = { cols: NC, rows: NR, cell: BR_CELL, halfX: BR_HALFX, halfZ: BR_HALFZ, passR, passD };
+
   // Cloisons internes là où il n'y a PAS de passage. Géométries fusionnées en un
   // seul mesh (~140 murs → 1 draw call) ; collision = un AABB par mur.
   {

@@ -16,7 +16,7 @@ import {
   updateWorld, buyStations, endBlackout,
   switchToZone, getZone, setActionHandlers,
   importMapJson, MAP_ACTIVE_KEY, MAP_LIST_KEY, ACTIVE_MAP, getLightLevelAt,
-  getExitPos, regenerateLevel,
+  getExitPos, regenerateLevel, getMaze,
 } from './world.js';
 // Fork BACKROOMS : coupe tout le gameplay horde (vagues, zombies, achats, perks)
 // quand la map active est le Niveau 0. Repasser ACTIVE_MAP (world.js) sur
@@ -26,6 +26,7 @@ const IS_BACKROOMS = ACTIVE_MAP === 'backrooms';
 const MENU_BRIGHT = (() => { try { return new URLSearchParams(location.search).has('bright'); } catch (e) { return false; } })();
 import { controls, initInput, updatePlayer, updateShake } from './player.js';
 import { initPlayerBody, updatePlayerBody } from './player-body.js';
+import { initMinimap, updateMinimap } from './minimap.js';
 import {
   shoot, startReload, switchWeapon, giveWeapon, refillAmmo,
   applyMedkit, applyArmor, unlockRegen, unlockNightVision, unlockLight,
@@ -82,6 +83,7 @@ setActionHandlers({
 // FIRST-PERSON BODY (Backrooms) : corps visible du joueur (bras/torse/jambes)
 // quand on baisse les yeux ou qu'on court. Charge player.glb (fallback placeholder).
 if (IS_BACKROOMS) initPlayerBody();
+if (IS_BACKROOMS) initMinimap();
 
 // =============================================================================
 //  PROMPT DE BORNES
@@ -658,6 +660,7 @@ function loop() {
     setCamBattery(game.camBattery);
     if (IS_BACKROOMS) {
       updateSanity(dt);
+      updateMinimap(camera, getMaze());
       // Porte de descente : prompt quand on est assez proche.
       const ep = getExitPos();
       nearExit = !!(ep && camera.position.distanceTo(ep) < 1.9);
