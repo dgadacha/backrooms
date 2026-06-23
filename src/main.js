@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import { renderer, scene, camera, maybeResize, composer, cartoonPass } from './renderer.js';
+import { renderer, scene, camera, maybeResize, composer, cartoonPass, forceNearestFilter } from './renderer.js';
 import {
   initGraphics, applyPreset, setShowFps, setFpsCap, setStartingWave, getStartingWave,
-  getSettings, PRESETS, PS2_MODE, liveSettings,
+  getSettings, PRESETS, PS2_MODE, liveSettings, togglePS2,
 } from './graphics-settings.js';
 import { moon, interactableSpots, groundDecals, glowSprites, fogDefaults, lampPositions } from './world.js';
 import { State, game, player, wave, resetState } from './state.js';
@@ -80,6 +80,12 @@ setActionHandlers({
 // FIRST-PERSON BODY (Backrooms) : corps visible du joueur (bras/torse/jambes)
 // quand on baisse les yeux ou qu'on court. Charge player.glb (fallback placeholder).
 if (IS_BACKROOMS) initPlayerBody();
+// Rendu PS2 (prototype A/B) : textures basse-fi sur le décor déjà construit +
+// bascule à la volée par la touche P (sauvegarde + recharge, cf. togglePS2).
+if (PS2_MODE) forceNearestFilter(scene);
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyP' && !e.repeat) togglePS2();
+});
 
 // =============================================================================
 //  PROMPT DE BORNES

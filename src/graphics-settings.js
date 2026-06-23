@@ -79,11 +79,31 @@ try {
   }
 } catch (e) { /* localStorage indispo, on garde defaults */ }
 
-// PS1/PS2/FlatShading retirés des settings UI — gardés à false pour compat
-// avec le code dead-branch qui les référence encore (renderer.js, world.js).
+// PS1 / FlatShading : héritage, gardés à false.
+// PS2_MODE : rendu rétro « jeu PS2 / VHS » (résolution interne 540p, anti-alias
+// OFF, textures bilinéaires sans mipmap, color crunch). Le pipeline de rendu se
+// configure au BOOT → on lit un flag URL (?ps2) ou localStorage ; le toggle
+// sauvegarde puis recharge.
 export const PS1_MODE     = false;
-export const PS2_MODE     = false;
 export const FLAT_SHADING = false;
+function _readPS2() {
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.has('ps2')) return q.get('ps2') !== '0';     // ?ps2 ou ?ps2=0
+    return localStorage.getItem('br-ps2') === '1';
+  } catch (e) { return false; }
+}
+export const PS2_MODE = _readPS2();
+
+// Bascule PS2 ↔ normal : persiste le choix et recharge (le setup rendu est figé au boot).
+export function togglePS2() {
+  try {
+    localStorage.setItem('br-ps2', PS2_MODE ? '0' : '1');
+    const u = new URL(location.href);
+    u.searchParams.delete('ps2');                      // localStorage gouverne après reload
+    location.replace(u.href);
+  } catch (e) { location.reload(); }
+}
 
 function save() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(current)); }
@@ -186,8 +206,10 @@ function apply() {
     cartoonPass.uniforms.uSaturationBoost.value  = 0.82;
     cartoonPass.uniforms.uVignetteStrength.value = 0.60;
     cartoonPass.uniforms.uVignetteFalloff.value  = 1.7;
-    cartoonPass.uniforms.uGrainIntensity.value   = 0.085;
+    cartoonPass.uniforms.uGrainIntensity.value   = PS2_MODE ? 0.12 : 0.085;
     cartoonPass.uniforms.uColorTint.value.set(1.0, 0.99, 0.9);
+    // PS2 : color crunch (banding ~16-bit, signature de l'époque)
+    cartoonPass.uniforms.uColorQuantize.value    = PS2_MODE ? 32.0 : 0.0;
   }
 
   // 6. Fog
