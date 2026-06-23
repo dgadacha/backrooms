@@ -246,9 +246,12 @@ export const composer = new EffectComposer(renderer, _composerRT);
 // jonctions mur/sol/plafond, sous les cloisons. Ancre toute la géo (gros gain
 // réalisme). Rend la scène lui-même → remplace le RenderPass.
 export const ssaoPass = new SSAOPass(scene, camera, 1, 1);
-ssaoPass.kernelRadius = 0.5;     // rayon AO ~0.5 m (échelle mètres)
-ssaoPass.minDistance = 0.004;
-ssaoPass.maxDistance = 0.10;
+// Rayon SERRÉ : l'AO ne vit que dans le creux des coins (jonctions mur/sol),
+// pas en bande noire le long des arêtes (le « halo » daté Far Cry 3). minDistance
+// un poil relevé pour ignorer les micro-différences de profondeur (auto-occlusion).
+ssaoPass.kernelRadius = 0.14;
+ssaoPass.minDistance  = 0.0008;
+ssaoPass.maxDistance  = 0.035;
 composer.addPass(ssaoPass);
 // Bloom : les sources émissives (néons) bavent → halo cinématique. threshold
 // élevé pour ne capter que les lampes, pas tout l'écran.
