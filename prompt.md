@@ -119,7 +119,8 @@ A single square fluorescent ceiling light panel, viewed straight from below, fla
     c'est un mesh séparé nommé `head/face/hair/…` ; si ton export est un seul mesh
     et que la tête dépasse, dis-le-moi, je la coupe par seuil de hauteur.
   - **Tenue** : **combinaison hazmat jaune** (la tenue classique des explorateurs
-    Backrooms) — capuche + masque à gaz couvrent la tête (pratique : rien à masquer).
+    Backrooms) — capuche + masque à gaz à **visière opaque** : **visage jamais
+    visible** (anonyme, plus flippant ; et rien à masquer côté tête en vue FPS).
   - **Meshy** : Image to 3D, Low Poly, **rig + anim de marche si possible** (sinon
     statique, le bob procédural est déjà là).
   - **Réglages** dans `src/player-body.js` au besoin : `TARGET_HEIGHT` (échelle),
@@ -127,7 +128,7 @@ A single square fluorescent ceiling light panel, viewed straight from below, fla
 
   Prompt concept Midjourney (→ Meshy) :
 ```
-Full body character concept sheet, person wearing a bright yellow full-body hazmat suit, chemical protective coverall, hood up, industrial full-face respirator gas mask, thick rubber gloves and boots, standing straight, arms relaxed down at the sides, neutral A-pose, front view, full figure from head to toe, plain neutral grey studio background, even diffuse lighting, no shadows, photorealistic, high detail --ar 2:3 --style raw --v 6.1
+Full body character concept sheet, person wearing a bright yellow full-body hazmat suit, chemical protective coverall, hood up tightly sealed, industrial gas mask with a dark opaque tinted visor that completely conceals the face, faceless, no visible face, no visible skin, thick rubber gloves and boots, standing straight, arms relaxed down at the sides, neutral A-pose, front view, full figure from head to toe, plain neutral grey studio background, even diffuse lighting, no shadows, photorealistic, high detail --no bare face, exposed skin, eyes --ar 2:3 --style raw --v 6.1
 ```
 
 ### À venir
