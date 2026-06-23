@@ -438,7 +438,9 @@ function buildBackrooms(opts = {}) {
         : { base, flicker: true, phase: Math.random() * 7 };
       levelGroup.add(l);
       zoneNeons.push(l);
-      addGlow(p.x, CH - 0.18, p.z, 0xfff4c2, dramatic ? 0.9 : 1.3);
+      // (plus de sprite addGlow ici : le bloom HDR fait déjà le halo des dalles
+      //  émissives → le sprite ne servait qu'à fausser le bloom et se voyait comme
+      //  une orbe flottante sous le panneau.)
     }
   }
 
