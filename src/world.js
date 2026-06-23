@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 RectAreaLightUniformsLib.init();   // requis pour que les RectAreaLight éclairent correctement
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';   // fusion des murs (perf)
 import { scene, MAX_ANISOTROPY } from './renderer.js';
 import { FOG_FAR, FOG_NEAR, FOG_COLOR, EYE } from './config.js';
 
@@ -363,24 +364,65 @@ function buildBackrooms(opts = {}) {
   wallSeg(-BR_HALFX, 0, WT, FD, wallMatPerim);
   wallSeg( BR_HALFX, 0, WT, FD, wallMatPerim);
 
-  // --- cloisons internes : segments aléatoires sur les arêtes de la grille,
-  //     en gardant un carré 3×3 dégagé autour du spawn central ---
+  // --- LABYRINTHE PARFAIT (algorithme Growing Tree) -------------------------
+  // Arbre couvrant de la grille de cellules → TOUTES les cellules connectées,
+  // exactement un chemin entre 2 cellules (aucune boucle, aucune zone isolée).
+  // Conséquence : la porte de sortie (sur le mur d'enceinte) est TOUJOURS
+  // atteignable depuis le spawn.
   const sC = Math.floor(BR_COLS / 2), sR = Math.floor(BR_ROWS / 2);
-  const safe = (c, r) => Math.abs(c - sC) <= 1 && Math.abs(r - sR) <= 1;
-  for (let col = 0; col < BR_COLS - 1; col++) {
-    for (let row = 0; row < BR_ROWS; row++) {
-      if (safe(col, row) || safe(col + 1, row)) continue;
-      if (Math.random() < 0.26) {
-        wallSeg(-BR_HALFX + (col + 1) * BR_CELL, -BR_HALFZ + (row + 0.5) * BR_CELL, WT, BR_CELL + WT);
-      }
+  const NC = BR_COLS, NR = BR_ROWS;
+  const seen  = Array.from({ length: NC }, () => new Array(NR).fill(false));
+  const passR = Array.from({ length: NC }, () => new Array(NR).fill(false)); // passage (c,r)→(c+1,r)
+  const passD = Array.from({ length: NC }, () => new Array(NR).fill(false)); // passage (c,r)→(c,r+1)
+  {
+    const active = [[sC, sR]];
+    seen[sC][sR] = true;
+    while (active.length) {
+      // Sélection : 70% « newest » (couloirs longs et sinueux, façon recursive
+      // backtracker) + 30% aléatoire (plus d'embranchements, façon Prim).
+      const idx = Math.random() < 0.7 ? active.length - 1 : (Math.random() * active.length) | 0;
+      const c = active[idx][0], r = active[idx][1];
+      const nb = [];
+      if (c > 0      && !seen[c - 1][r]) nb.push(0); // ouest
+      if (c < NC - 1 && !seen[c + 1][r]) nb.push(1); // est
+      if (r > 0      && !seen[c][r - 1]) nb.push(2); // nord
+      if (r < NR - 1 && !seen[c][r + 1]) nb.push(3); // sud
+      if (!nb.length) { active.splice(idx, 1); continue; }
+      const dir = nb[(Math.random() * nb.length) | 0];
+      let nc = c, nr = r;
+      if      (dir === 0) { nc = c - 1; passR[nc][nr] = true; }
+      else if (dir === 1) { nc = c + 1; passR[c][r]  = true; }
+      else if (dir === 2) { nr = r - 1; passD[nc][nr] = true; }
+      else                { nr = r + 1; passD[c][r]  = true; }
+      seen[nc][nr] = true;
+      active.push([nc, nr]);
     }
   }
-  for (let col = 0; col < BR_COLS; col++) {
-    for (let row = 0; row < BR_ROWS - 1; row++) {
-      if (safe(col, row) || safe(col, row + 1)) continue;
-      if (Math.random() < 0.26) {
-        wallSeg(-BR_HALFX + (col + 0.5) * BR_CELL, -BR_HALFZ + (row + 1) * BR_CELL, BR_CELL + WT, WT);
-      }
+  // Cloisons internes là où il n'y a PAS de passage. Géométries fusionnées en un
+  // seul mesh (~140 murs → 1 draw call) ; collision = un AABB par mur.
+  {
+    const wallGeos = [];
+    const addWall = (cx, cz, w, d) => {
+      const g = new THREE.BoxGeometry(w, CH, d);
+      g.translate(cx, CH / 2, cz);
+      wallGeos.push(g);
+      addObstacle(cx - w / 2, cx + w / 2, cz - d / 2, cz + d / 2);
+    };
+    for (let col = 0; col < NC - 1; col++)
+      for (let row = 0; row < NR; row++)
+        if (!passR[col][row])
+          addWall(-BR_HALFX + (col + 1) * BR_CELL, -BR_HALFZ + (row + 0.5) * BR_CELL, WT, BR_CELL + WT);
+    for (let col = 0; col < NC; col++)
+      for (let row = 0; row < NR - 1; row++)
+        if (!passD[col][row])
+          addWall(-BR_HALFX + (col + 0.5) * BR_CELL, -BR_HALFZ + (row + 1) * BR_CELL, BR_CELL + WT, WT);
+    if (wallGeos.length) {
+      const merged = mergeGeometries(wallGeos, false);
+      for (const g of wallGeos) g.dispose();
+      const wallMesh = new THREE.Mesh(merged, wallMat);
+      wallMesh.receiveShadow = true;
+      wallMesh.userData._skipOutline = true;
+      levelGroup.add(wallMesh);
     }
   }
 
