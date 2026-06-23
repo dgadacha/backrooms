@@ -423,7 +423,10 @@ function startRun() {
     zone.playerSpawn.z + zone.baseZ,
   );
   camera.rotation.set(0, zone.playerSpawnYaw || 0, 0, 'YXZ');
-  if (cartoonPass) cartoonPass.uniforms.uExposure.value = 1.0;
+  if (cartoonPass) {
+    cartoonPass.uniforms.uExposure.value = 1.0;
+    cartoonPass.uniforms.uVignetteStrength.value = 0.58;   // vignette de jeu fixe (santé mentale off)
+  }
   if (!IS_BACKROOMS) startWave(getStartingWave());
 }
 function resetRun() {
@@ -672,7 +675,7 @@ function loop() {
     setCamcorderVisible(game.cameraUp);
     setCamBattery(game.camBattery);
     if (IS_BACKROOMS) {
-      updateSanity(dt);
+      // updateSanity(dt);   // dynamique santé mentale désactivée (Dylan) — décommenter pour réactiver
       updateMinimap(camera, getMaze());
       // Porte de descente : prompt quand on est assez proche.
       const ep = getExitPos();

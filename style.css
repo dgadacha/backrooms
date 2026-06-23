@@ -131,6 +131,7 @@ body {
   position: absolute; left: 18px; bottom: 190px;     /* juste au-dessus de la minimap */
   width: 164px;
   font-family: "JetBrains Mono", monospace;
+  display: none;   /* dynamique santé mentale désactivée (Dylan) — retirer pour réactiver */
 }
 .sanity-head {
   display: flex; align-items: center; gap: 6px;
